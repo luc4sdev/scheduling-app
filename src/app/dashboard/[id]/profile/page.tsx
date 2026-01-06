@@ -9,13 +9,29 @@ import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utis";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+
+interface PayloadUser {
+    name: string;
+    lastName: string;
+    email: string;
+    password?: string;
+    cep: string;
+    street: string;
+    number: string;
+    complement?: string;
+    neighborhood: string;
+    city: string;
+    state: string;
+}
 
 const profileSchema = z.object({
     firstName: z.string().min(2, "Mínimo 2 letras"),
     lastName: z.string().min(2, "Mínimo 2 letras"),
     email: z.email("Email inválido"),
-    password: z.string().min(6, "Mínimo 6 caracteres"),
+    password: z.string().optional(),
     cep: z.string().min(8, "CEP inválido").max(9),
     street: z.string().min(1, "Rua obrigatória"),
     number: z.string().min(1, "Número obrigatório"),
@@ -23,12 +39,21 @@ const profileSchema = z.object({
     neighborhood: z.string().min(1, "Bairro obrigatório"),
     city: z.string().min(1, "Cidade obrigatória"),
     state: z.string().min(2, "Estado obrigatório"),
+}).refine((data) => {
+    if (data.password && data.password.length > 0 && data.password.length < 6) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A senha deve ter no mínimo 6 caracteres",
+    path: ["password"]
 });
 
 type ProfileSchemaType = z.infer<typeof profileSchema>
 
 export default function Profile() {
-    const [isLoading, setIsLoading] = useState(false);
+    const { data: session } = useSession();
+    const queryClient = useQueryClient();
     const [showPassword, setShowPassword] = useState(false);
     const [addressVisible, setAddressVisible] = useState(true);
 
@@ -37,27 +62,93 @@ export default function Profile() {
         handleSubmit,
         watch,
         setValue,
+        reset,
         formState: { errors, isValid }
     } = useForm<ProfileSchemaType>({
         resolver: zodResolver(profileSchema),
         mode: "onChange",
-        defaultValues: {
-            firstName: "Mateus",
-            lastName: "Barbosa",
-            email: "mateus@goldspell.com.br",
-            password: "***************",
-            cep: "03333-050",
-            street: "Rua Coronel irineu de Castro",
-            number: "43",
-            complement: "Sala 1302",
-            neighborhood: "Jardim Anália Franco",
-            city: "São Paulo",
-            state: "São Paulo"
+    });
+
+    const { data: userData, isLoading: isLoadingData } = useQuery({
+        queryKey: ['profile', session?.user?.id],
+        queryFn: async () => {
+            if (!session?.user?.token) return null;
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/me`, {
+                headers: {
+                    Authorization: `Bearer ${session.user.token}`
+                }
+            });
+            if (!res.ok) throw new Error('Falha ao buscar perfil');
+            return await res.json();
+        },
+        enabled: !!session?.user?.token
+    });
+
+    useEffect(() => {
+        if (userData) {
+            reset({
+                firstName: userData.name || "",
+                lastName: userData.lastName || "",
+                email: userData.email || "",
+                password: "",
+                cep: userData.cep || "",
+                street: userData.street || "",
+                number: userData.number || "",
+                complement: userData.complement || "",
+                neighborhood: userData.neighborhood || "",
+                city: userData.city || "",
+                state: userData.state || ""
+            });
+            setAddressVisible(true);
+        }
+    }, [userData, reset]);
+
+    const mutation = useMutation({
+        mutationFn: async (data: ProfileSchemaType) => {
+            const payload: PayloadUser = {
+                name: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                cep: data.cep,
+                street: data.street,
+                number: data.number,
+                complement: data.complement,
+                neighborhood: data.neighborhood,
+                city: data.city,
+                state: data.state
+            };
+
+            if (data.password && data.password.length >= 6) {
+                payload.password = data.password;
+            }
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${session?.user?.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session?.user?.token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Erro ao atualizar');
+            }
+
+            return await res.json();
+        },
+        onSuccess: () => {
+            toastMessage({ message: "Perfil atualizado com sucesso!", type: "success" });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+        },
+        onError: () => {
+            toastMessage({ message: "Erro ao atualizar perfil", type: "error" });
         }
     });
 
     const cepValue = watch("cep");
-
     useEffect(() => {
         const fetchAddress = async () => {
             const cleanCep = cepValue?.replace(/\D/g, '');
@@ -72,33 +163,33 @@ export default function Profile() {
                         setValue("state", data.uf);
                         setAddressVisible(true);
                     }
-                } catch (error) {
+                } catch {
                     console.error("Erro ao buscar CEP");
                 }
             }
         };
 
-        if (cepValue && cepValue !== "03333-050") {
+        if (cepValue && cepValue !== userData?.cep) {
             const timeoutId = setTimeout(fetchAddress, 500);
             return () => clearTimeout(timeoutId);
         }
-    }, [cepValue, setValue]);
+    }, [cepValue, setValue, userData]);
 
     async function handleSave(data: ProfileSchemaType) {
-        setIsLoading(true);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            console.log("Dados atualizados:", data);
-            toastMessage({ message: "Perfil atualizado com sucesso!", type: "success" });
-        } catch (error) {
-            toastMessage({ message: "Erro ao atualizar perfil", type: "error" });
-        }
-        setIsLoading(false);
+        mutation.mutate(data);
+    }
+
+    if (isLoadingData) {
+        return (
+            <div className="flex h-96 items-center justify-center">
+                <LoaderCircle className="w-8 h-8 animate-spin text-zinc-400" />
+            </div>
+        );
     }
 
     return (
         <div className="flex flex-col items-center justify-center gap-6">
-            <div className="bg-white rounded-lg border border-zinc-200 shadow-sm p-8">
+            <div className="bg-white rounded-lg border border-zinc-200 shadow-sm p-8 max-w-200 w-full">
                 <form onSubmit={handleSubmit(handleSave)} className="flex flex-col gap-4">
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -108,7 +199,7 @@ export default function Profile() {
                             </LabelPrimitive.Root>
                             <input
                                 id="firstName"
-                                placeholder="Mateus"
+                                placeholder="Seu nome"
                                 className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none transition-colors"
                                 {...register("firstName")}
                             />
@@ -120,7 +211,7 @@ export default function Profile() {
                             </LabelPrimitive.Root>
                             <input
                                 id="lastName"
-                                placeholder="Barbosa"
+                                placeholder="Seu sobrenome"
                                 className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none transition-colors"
                                 {...register("lastName")}
                             />
@@ -135,7 +226,7 @@ export default function Profile() {
                         <input
                             id="email"
                             type="email"
-                            placeholder="mateus@goldspell.com.br"
+                            placeholder="seu@email.com"
                             className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none transition-colors"
                             {...register("email")}
                         />
@@ -144,7 +235,7 @@ export default function Profile() {
 
                     <div className="flex flex-col gap-2">
                         <LabelPrimitive.Root htmlFor="password" className="text-sm font-bold text-zinc-700">
-                            Senha de acesso <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                            Nova Senha <span className="font-normal text-zinc-500 text-xs">(Deixe em branco para manter a atual)</span>
                         </LabelPrimitive.Root>
                         <div className="relative">
                             <input
@@ -185,7 +276,6 @@ export default function Profile() {
                     )}>
                         <div className="min-h-0 flex flex-col gap-4">
 
-                            {/* Endereço (Read Only) */}
                             <div className="flex flex-col gap-2">
                                 <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Endereço</LabelPrimitive.Root>
                                 <input
@@ -247,16 +337,16 @@ export default function Profile() {
 
                     <Button
                         type="submit"
-                        disabled={isLoading || !isValid}
+                        disabled={mutation.isPending}
                         className={cn(
                             "mt-4 w-full transition-all duration-300",
                             !isValid ? "bg-zinc-300 text-white cursor-not-allowed hover:bg-zinc-300" : "bg-black text-white hover:bg-zinc-800"
                         )}
                     >
-                        {isLoading ? (
+                        {mutation.isPending ? (
                             <LoaderCircle className="w-5 h-5 animate-spin" />
                         ) : (
-                            "Salvar"
+                            "Salvar Alterações"
                         )}
                     </Button>
 

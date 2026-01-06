@@ -20,7 +20,7 @@ export async function POST(request: Request) {
             status: 201,
             headers: { 'Content-Type': 'application/json' },
         });
-    } catch (error) {
+    } catch {
         return new Response(
             JSON.stringify({ message: 'Erro interno no servidor' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }

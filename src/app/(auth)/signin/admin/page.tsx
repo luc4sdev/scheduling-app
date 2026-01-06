@@ -13,9 +13,6 @@ import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utis";
 import { Button } from "@/components/ui/button";
 
-
-
-
 const signInSchema = z.object({
     email: z.email("Insira um email válido"),
     password: z.string().min(6, "No mínimo 6 caracteres")
@@ -50,7 +47,7 @@ export default function SigninAdmin() {
             } else {
                 toastMessage({ message: "Email ou senha inválidos", type: "error" });
             }
-        } catch (error) {
+        } catch {
             toastMessage({ message: "Erro ao tentar fazer login", type: "error" });
         }
         setIsLoading(false);

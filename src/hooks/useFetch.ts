@@ -18,16 +18,16 @@ const useFetch = ({
     baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ''
 }: UseFetchProps) => {
     const { data: session } = useSession();
-    const queryKey = ['fetch', ...cacheKeys, url];
+    const queryKey = [...cacheKeys, url];
     const queryFn = async () => {
-        if (!session?.token) {
+        if (!session?.user.token) {
             throw new Error('No session token available');
         }
         const fullUrl = `${baseUrl}${url}`;
         const response = await fetch(fullUrl, {
             ...options,
             headers: {
-                Authorization: `Bearer ${session.token}`,
+                Authorization: `Bearer ${session.user.token}`,
             },
         });
         if (!response.ok) {

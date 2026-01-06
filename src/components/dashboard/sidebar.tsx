@@ -1,34 +1,33 @@
 'use client'
 
+import { useState } from 'react'
 import {
     Calendar,
     ListCheck,
-    User,
+    User as UserIcon,
     ChevronDown,
+    LogOut
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/utils/utis'
 import Image from 'next/image'
+import { useSession, signOut } from 'next-auth/react'
 import useFetch from '@/hooks/useFetch'
-import { useSession } from 'next-auth/react'
+import { User } from '@/types/user'
 
 const navItems = [
     { label: 'Agendamentos', icon: Calendar, href: '/dashboard/[id]', exact: true },
     { label: 'Logs', icon: ListCheck, href: '/dashboard/[id]/logs', exact: false },
-    { label: 'Minha Conta', icon: User, href: '/dashboard/[id]/profile', exact: false },
+    { label: 'Minha Conta', icon: UserIcon, href: '/dashboard/[id]/profile', exact: false },
 ]
-
-interface Profile {
-    id: string;
-    name: string;
-    email: string;
-    role: 'USER' | 'ADMIN';
-}
 
 export function Sidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
+
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
     const userId = pathname.split('/')[2] || session?.user?.id || '';
 
     const isActive = (resolvedHref: string, exact: boolean) => {
@@ -40,22 +39,27 @@ export function Sidebar() {
     }
 
     const {
-        data: fetchData,
-        isLoading: loading,
+        data: userData,
     } = useFetch({
-        url: '/api/profile',
+        url: '/users/' + userId,
         options: {
             method: 'GET',
         },
-        cacheKeys: ['profile', userId],
+        cacheKeys: ['profile'],
     });
+    const profile = userData as User || {};
+    const displayName = profile.name || 'Usuário';
+    const displayRole = profile.role === 'ADMIN' ? 'Administrador' : 'Usuário';
 
-    const profile = fetchData?.user as Profile || {};
-    const displayName = profile.name || session?.user?.name || 'Usuário';
-    const displayRole = profile.role || 'Cliente';
+    const handleSignOut = async () => {
+        await signOut({
+            callbackUrl: '/signin',
+            redirect: true
+        });
+    };
 
     return (
-        <aside className="w-64 h-screen fixed top-0 left-0 bg-[#F5F4F2] border-r border-gray-200 flex flex-col">
+        <aside className="w-64 h-screen fixed top-0 left-0 bg-[#F5F4F2] border-r border-gray-200 flex flex-col z-50">
 
             <div className="h-20 flex items-center px-6">
                 <div className="w-10 h-10 relative">
@@ -92,17 +96,42 @@ export function Sidebar() {
                 })}
             </nav>
 
-            <div className="mt-auto p-4 border-t border-gray-200/60">
-                <div className="flex items-center justify-between p-2 rounded-md hover:bg-zinc-200/50 cursor-pointer transition-colors group">
+            <div className="mt-auto p-4 border-t border-gray-200/60 relative">
+
+                {isMenuOpen && (
+                    <div className="absolute bottom-full left-4 right-4 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-1 animate-in slide-in-from-bottom-2 fade-in duration-200">
+                        <button
+                            onClick={handleSignOut}
+                            type='button'
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Sair da conta
+                        </button>
+                    </div>
+                )}
+
+                <div
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className={cn(
+                        "flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors group select-none",
+                        isMenuOpen ? "bg-zinc-200/50" : "hover:bg-zinc-200/50"
+                    )}
+                >
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-zinc-900 leading-tight">
-                            {loading ? <div className="h-4 w-24 bg-zinc-200 animate-pulse rounded" /> : displayName}
+                            {displayName}
                         </span>
                         <span className="text-xs text-zinc-500 mt-0.5">
                             {displayRole}
                         </span>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                    <ChevronDown
+                        className={cn(
+                            "w-4 h-4 text-zinc-400 group-hover:text-zinc-600 transition-transform duration-200",
+                            isMenuOpen && "rotate-180"
+                        )}
+                    />
                 </div>
             </div>
         </aside>

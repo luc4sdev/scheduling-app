@@ -11,9 +11,10 @@ import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utis";
 import { Button } from "@/components/ui/button";
 import { SignupHeader } from "@/components/signup-header";
+import { getSession, signIn } from "next-auth/react";
 
 const signUpSchema = z.object({
-    firstName: z.string().min(2, "Mínimo 2 letras"),
+    name: z.string().min(2, "Mínimo 2 letras"),
     lastName: z.string().min(2, "Mínimo 2 letras"),
     email: z.email("Email inválido"),
     password: z.string().min(6, "Mínimo 6 caracteres"),
@@ -67,7 +68,7 @@ export default function Signup() {
                     } else {
                         toastMessage({ message: "CEP não encontrado", type: "error" });
                     }
-                } catch (error) {
+                } catch {
                     toastMessage({ message: "Erro ao buscar CEP", type: "error" });
                 }
                 setIsLoading(false);
@@ -84,15 +85,39 @@ export default function Signup() {
     async function handleSignUp(data: SignUpSchemaType) {
         setIsLoading(true);
         try {
-            console.log("Dados do cadastro:", data);
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
 
-            toastMessage({ message: "Cadastro realizado com sucesso!", type: "success" });
-            router.push('/login');
+            if (!res.ok) {
+                const errorData = await res.json();
+                toastMessage({
+                    message: errorData.message || 'Erro ao criar conta', type: 'error'
+                })
+                throw new Error(errorData.message || 'Erro ao criar conta');
+            }
+            const signInResult = await signIn("credentials", {
+                redirect: false,
+                email: data.email,
+                password: data.password,
+            });
+            if (signInResult?.ok) {
+                const session = await getSession();
+                const user = session?.user;
+                const token = session?.user.token;
+                if (user && token) {
+                    router.push(`/dashboard/${user.id}`);
+                }
+            } else {
+                console.error("Erro ao fazer login");
+            }
         } catch (error) {
-            toastMessage({ message: "Erro ao realizar cadastro", type: "error" });
+            console.error('Erro ao cadastrar:', error);
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     }
 
     return (
@@ -112,16 +137,16 @@ export default function Signup() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-2">
-                                    <LabelPrimitive.Root htmlFor="firstName" className="text-sm font-bold text-zinc-700">
+                                    <LabelPrimitive.Root htmlFor="name" className="text-sm font-bold text-zinc-700">
                                         Nome <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
                                     </LabelPrimitive.Root>
                                     <input
-                                        id="firstName"
+                                        id="name"
                                         placeholder="Mateus"
                                         className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                        {...register("firstName")}
+                                        {...register("name")}
                                     />
-                                    {errors.firstName && <span className="text-xs text-red-500">{errors.firstName.message}</span>}
+                                    {errors.name && <span className="text-xs text-red-500">{errors.name.message}</span>}
                                 </div>
                                 <div className="flex flex-col gap-2">
                                     <LabelPrimitive.Root htmlFor="lastName" className="text-sm font-bold text-zinc-700">

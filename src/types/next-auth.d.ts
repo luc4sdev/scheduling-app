@@ -6,7 +6,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: 'USER' | 'ADMIN';
+      role: string;
       token: string;
       isSubscribed: boolean;
     } & DefaultSession["user"];
@@ -14,9 +14,8 @@ declare module "next-auth" {
 
   interface User {
     id: string;
-    role: 'USER' | 'ADMIN';
+    role: string;
     token: string;
-    isSubscribed: boolean;
   }
 }
 
@@ -25,6 +24,5 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     token: string;
-    isSubscribed: boolean;
   }
 }

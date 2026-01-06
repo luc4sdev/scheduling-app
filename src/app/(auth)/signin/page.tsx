@@ -28,7 +28,7 @@ export default function Signin() {
         formState: { errors, isValid }
     } = useForm<SignInSchemaType>({
         resolver: zodResolver(signInSchema),
-        mode: "onChange"
+        mode: "onSubmit"
     })
 
     const router = useRouter();
@@ -57,7 +57,7 @@ export default function Signin() {
             } else {
                 toastMessage({ message: "Email ou senha inválidos", type: "error" });
             }
-        } catch (error) {
+        } catch {
             toastMessage({ message: "Erro ao tentar fazer login", type: "error" });
         }
         setIsLoading(false);
@@ -143,7 +143,6 @@ export default function Signin() {
 
                             <Button
                                 type="submit"
-                                disabled={isLoading || !isValid}
                                 className={cn(
                                     "mt-2 w-full transition-all duration-300",
                                     !isValid ? "bg-zinc-200 text-zinc-400 hover:bg-zinc-200 cursor-not-allowed" : "bg-black text-white hover:bg-zinc-800"

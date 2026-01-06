@@ -1,5 +1,11 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { z } from "zod";
+
+const signInSchema = z.object({
+  email: z.email(),
+  password: z.string().min(1),
+});
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
@@ -10,41 +16,52 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 password: { label: "Senha", type: "password" }
             },
             async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) return null;
+                const parsedCredentials = signInSchema.safeParse(credentials);
 
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sessions/password`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        email: credentials.email,
-                        password: credentials.password
-                    }),
-                    headers: { "Content-Type": "application/json" }
-                });
+                if (!parsedCredentials.success) {
+                    return null;
+                }
 
-                const data = await res.json();
-                
-                if (res.ok && data.token) {
-                    const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile`, {
-                        headers: { Authorization: `Bearer ${data.token}` }
+                const { email, password } = parsedCredentials.data;
+
+                try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sessions/password`, {
+                        method: "POST",
+                        body: JSON.stringify({ email, password }),
+                        headers: { "Content-Type": "application/json" }
                     });
 
-                    const userData = await profileRes.json();
-                    
-                    return {
-                        id: userData.user.id,
-                        name: userData.user.name,
-                        email: userData.user.email,
-                        role: userData.user.role,
-                        isSubscribed: userData.user.isSubscribed,
-                        token: data.token
-                    };
+                    if (!res.ok) return null;
+
+                    const data = await res.json();
+
+                    if (data.token) {
+                        const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/me`, {
+                            headers: { Authorization: `Bearer ${data.token}` }
+                        });
+                        if (!profileRes.ok) return null;
+
+                        const userData = await profileRes.json();
+                        
+                        return {
+                            id: userData.id,
+                            name: userData.name,
+                            email: userData.email,
+                            role: userData.role,
+                            token: data.token,
+                        };
+                    }
+
+                    return null;
+                } catch (error) {
+                    console.error("Erro no authorize:", error);
+                    return null;
                 }
-                return null;
             }
         })
     ],
     pages: {
-        signIn: '/signin'
+        signIn: '/auth/signin'
     },
     callbacks: {
         async jwt({ token, user, trigger, session }) {
@@ -52,12 +69,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.id = user.id;
                 token.role = user.role;
                 token.token = user.token;
-                token.isSubscribed = user.isSubscribed;
             }
+
             if (trigger === "update" && session) {
                 token.name = session.name ?? token.name;
                 token.role = session.role ?? token.role;
-                token.isSubscribed = session.isSubscribed ?? token.isSubscribed;
             }
             return token;
         },
@@ -65,7 +81,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (token) {
                 session.user.id = token.id;
                 session.user.role = token.role;
-                session.user.isSubscribed = token.isSubscribed;
                 session.user.token = token.token;
             }
             return session;
