@@ -3,7 +3,7 @@ import {
     User,
 } from "lucide-react";
 
-export function ModuleBadge({ module }: { module: "Agendamento" | "Minha Conta" }) {
+export function ModuleBadge({ module }: { module: string }) {
     const Icon = module === "Agendamento" ? Calendar : User;
 
     return (

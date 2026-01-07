@@ -48,8 +48,8 @@ export function Sidebar() {
         cacheKeys: ['profile'],
     });
     const profile = userData as User || {};
-    const displayName = profile.name || 'Usuário';
-    const displayRole = profile.role === 'ADMIN' ? 'Administrador' : 'Usuário';
+    const displayName = profile.name || 'Cliente';
+    const displayRole = profile.role === 'ADMIN' ? 'Admin' : 'Cliente';
 
     const handleSignOut = async () => {
         await signOut({
@@ -61,7 +61,7 @@ export function Sidebar() {
     return (
         <aside className="w-64 h-screen fixed top-0 left-0 bg-[#F5F4F2] border-r border-gray-200 flex flex-col z-50">
 
-            <div className="h-20 flex items-center px-6">
+            <div className="h-22 flex items-center px-6 border-b border-gray-200">
                 <div className="w-10 h-10 relative">
                     <Image
                         src='/logo.svg'
@@ -73,7 +73,7 @@ export function Sidebar() {
                 </div>
             </div>
 
-            <nav className="flex flex-col gap-2 px-4 mt-4">
+            <nav className="flex flex-col gap-2 px-4 mt-8">
                 {navItems.map(({ label, icon: Icon, href, exact }) => {
                     const resolvedHref = href.replace('[id]', userId);
                     const active = isActive(resolvedHref, exact);

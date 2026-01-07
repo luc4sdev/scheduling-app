@@ -3,15 +3,17 @@ import {
     X,
 } from "lucide-react";
 import { cn } from "@/utils/utis";
-import { Appointment, Status } from "@/types/appointment";
+import { AppointmentItem } from "@/types/appointment";
+
 
 interface AppointmentsTableProps {
-    data: Appointment[];
+    data: AppointmentItem[];
+    onSort: () => void;
 }
 
-export function AppointmentsTable({ data }: AppointmentsTableProps) {
+export function AppointmentsTable({ data, onSort }: AppointmentsTableProps) {
 
-    const getRowColor = (status: Status) => {
+    const getRowColor = (status: string) => {
         switch (status) {
             case "Agendado": return "bg-teal-200/10";
             case "Cancelado": return "bg-red-200/20";
@@ -19,7 +21,7 @@ export function AppointmentsTable({ data }: AppointmentsTableProps) {
         }
     };
 
-    const getStatusBadge = (status: Status) => {
+    const getStatusBadge = (status: string) => {
         switch (status) {
             case "Agendado":
                 return (
@@ -49,7 +51,9 @@ export function AppointmentsTable({ data }: AppointmentsTableProps) {
                 <thead className="text-xs text-zinc-500 font-semibold bg-white border-b border-zinc-100">
                     <tr>
                         <th className="px-6 py-4 w-[20%]">
-                            <div className="flex items-center gap-1 cursor-pointer hover:text-zinc-800">
+                            <div
+                                onClick={onSort}
+                                className="flex items-center gap-1 cursor-pointer hover:text-zinc-800">
                                 Data agendamento
                                 <ArrowUpDown className="w-3 h-3" />
                             </div>

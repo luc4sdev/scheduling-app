@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const getHeaderInfo = () => {
         if (pathname.includes('/logs')) {
             return {
-                title: "Logs do Sistema",
+                title: "Logs",
                 subtitle: "Acompanhe todos os seus Logs"
             };
         }

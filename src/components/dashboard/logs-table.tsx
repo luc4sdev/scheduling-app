@@ -4,8 +4,9 @@ import { LogItem } from "@/types/log";
 
 interface LogsTableProps {
     data: LogItem[];
+    onSort: () => void;
 }
-export function LogsTable({ data }: LogsTableProps) {
+export function LogsTable({ data, onSort }: LogsTableProps) {
     return (
         <div className="flex-1 w-full overflow-x-auto">
             <table className="w-full text-sm text-left">
@@ -14,7 +15,10 @@ export function LogsTable({ data }: LogsTableProps) {
                         <th className="px-6 py-4 w-[40%] font-medium">Tipo de atividade</th>
                         <th className="px-6 py-4 w-[30%] font-medium">Módulo</th>
                         <th className="px-6 py-4 w-[30%] font-medium">
-                            <div className="flex items-center gap-1 cursor-pointer hover:text-zinc-800">
+                            <div
+                                onClick={onSort}
+                                className="flex items-center gap-1 cursor-pointer hover:text-zinc-800"
+                            >
                                 Data e horário
                                 <ArrowUpDown className="w-3 h-3" />
                             </div>

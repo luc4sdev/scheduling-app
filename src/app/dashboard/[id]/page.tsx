@@ -3,36 +3,69 @@
 import { useState } from "react";
 import {
     Search,
-    Calendar as CalendarIcon,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { AppointmentsTable } from "@/components/dashboard/appointments-table";
-import { Appointment } from "@/types/appointment";
+import { AppointmentItem, AppointmentApiResponse } from "@/types/appointment";
+import useFetch from "@/hooks/useFetch";
+import { formatDate } from "@/utils/format-date";
+import { statusMap } from "@/utils/status-translator";
 
-
-
-
-
-const mockAppointments: Appointment[] = [
-    { id: "1", date: "22/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Em análise" },
-    { id: "2", date: "21/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Em análise" },
-    { id: "3", date: "20/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Agendado" },
-    { id: "4", date: "19/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Agendado" },
-    { id: "5", date: "19/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Cancelado" },
-    { id: "6", date: "19/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Cancelado" },
-    { id: "7", date: "18/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Agendado" },
-    { id: "8", date: "12/01/2025 às 16:00", clientName: "Camila Mendes", role: "Cliente", room: "Sala 012", status: "Agendado" },
-];
 
 export default function Appointments() {
-    const [hasData, setHasData] = useState(true);
+    const [page, setPage] = useState(1);
+    const [search, setSearch] = useState("");
+    const [dateFilter, setDateFilter] = useState("");
+    const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+
+
+    const { data: fetchResponse, isLoading } = useFetch({
+        url: `/schedules?page=${page}&limit=8&query=${search}&date=${dateFilter}&order=${sortOrder}`,
+        options: {
+            method: 'GET',
+        },
+        cacheKeys: ['schedules', page, search, dateFilter, sortOrder],
+    });
+
+    const appointments: AppointmentItem[] = fetchResponse?.data?.map((item: AppointmentApiResponse) => ({
+        id: item.id,
+        date: formatDate(item.date),
+        clientName: item.user ? `${item.user.name} ${item.user.lastName}` : 'Usuário desconhecido',
+        role: item.user?.role === 'ADMIN' ? 'Admin' : 'Cliente',
+        room: item.room?.name || 'Sala removida',
+        status: statusMap[item.status] || item.status
+    })) || [];
+
+    const totalPages = fetchResponse?.totalPages || 1;
+
+    const handlePreviousPage = () => {
+        if (page > 1) setPage((prev) => prev - 1);
+    };
+
+    const handleNextPage = () => {
+        if (page < totalPages) setPage((prev) => prev + 1);
+    };
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        setPage(1);
+    };
+
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDateFilter(e.target.value);
+        setPage(1);
+    };
+
+    const toggleSort = () => {
+        setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC');
+    };
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-lg border border-zinc-200 shadow-sm min-h-150 flex flex-col">
+            <div className="bg-white rounded-lg border border-zinc-200 shadow-sm min-h-190 flex flex-col">
 
                 <div className="p-6 border-b border-zinc-100 flex flex-col md:flex-row gap-4 justify-between items-center">
 
@@ -41,49 +74,62 @@ export default function Appointments() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                             <input
                                 type="text"
-                                placeholder="Filtre por nome, CPF / CNPJ ou E-mail"
-                                className="w-full h-11 pl-10 pr-4 rounded-md border border-zinc-200 bg-white text-sm outline-none focus:ring-2 focus:ring-zinc-950 placeholder:text-zinc-400"
+                                placeholder="Filtre por nome"
+                                value={search}
+                                onChange={handleSearch}
+                                className="w-full h-11 pl-10 pr-4 rounded-md border border-zinc-200 bg-white text-sm outline-none focus:ring-2 focus:ring-zinc-950 placeholder:text-zinc-400 transition-all"
                             />
                         </div>
 
-                        <button className="flex items-center justify-between w-full md:w-50 h-11 px-3 rounded-md border border-zinc-200 bg-white text-sm text-zinc-500 hover:bg-zinc-50 transition-colors outline-none focus:ring-2 focus:ring-zinc-950">
-                            <span>Selecione</span>
-                            <CalendarIcon className="w-4 h-4 text-zinc-400" />
-                        </button>
+                        <div className="relative w-full md:w-50 h-11">
+                            <input
+                                type="date"
+                                value={dateFilter}
+                                onChange={handleDateChange}
+                                className="w-full h-full px-3 rounded-md border border-zinc-200 text-sm text-zinc-500 hover:bg-zinc-50 transition-colors outline-none focus:ring-2 focus:ring-zinc-950 appearance-none z-10 relative bg-transparent"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2 w-full md:w-auto">
                         <Button className="bg-black text-white hover:bg-zinc-800 h-11 px-6 whitespace-nowrap font-medium w-full md:w-auto">
                             Novo Agendamento
                         </Button>
-
-                        {/* Botão APENAS PARA DESENVOLVIMENTO (Alternar visualização) */}
-                        <button
-                            onClick={() => setHasData(!hasData)}
-                            className="text-[10px] text-zinc-400 border px-2 py-1 rounded hover:bg-zinc-100"
-                            title="Alternar estado vazio/cheio"
-                        >
-                            {hasData ? "Ver Vazio" : "Ver Dados"}
-                        </button>
                     </div>
                 </div>
 
                 <div className="flex-1 flex flex-col">
-                    {!hasData ? (
-                        <Skeleton />
+                    {isLoading ? (
+                        <div className="p-6">
+                            <Skeleton />
+                        </div>
+                    ) : appointments.length > 0 ? (
+                        <AppointmentsTable data={appointments} onSort={toggleSort} />
                     ) : (
-                        <AppointmentsTable data={mockAppointments} />
+                        <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
+                            Nenhum agendamento encontrado.
+                        </div>
                     )}
                 </div>
 
-                <div className="p-4 border-t border-zinc-100 flex justify-center items-center gap-2">
-                    <button className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black">
+                <div className="p-4 border-t border-zinc-100 flex justify-center items-center gap-2 mt-auto">
+                    <button
+                        onClick={handlePreviousPage}
+                        disabled={page === 1 || isLoading}
+                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
+                    >
                         <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-md text-sm font-medium">
-                        1
-                    </button>
-                    <button className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black">
+
+                    <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-md text-sm font-medium">
+                        {page}
+                    </span>
+
+                    <button
+                        onClick={handleNextPage}
+                        disabled={page >= totalPages || isLoading}
+                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
+                    >
                         <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
@@ -92,5 +138,3 @@ export default function Appointments() {
         </div>
     );
 }
-
-

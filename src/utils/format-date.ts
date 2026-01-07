@@ -1,4 +1,4 @@
-export const formatCreateDate = (date: string): string => {
+export const formatDate = (date: string): string => {
 
     if (typeof date !== 'string') {
         return '';
