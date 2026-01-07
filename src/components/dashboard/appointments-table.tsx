@@ -1,10 +1,13 @@
-import {
-    ArrowUpDown,
-    X,
-} from "lucide-react";
+'use client'
+
+import { ArrowUpDown, Check, X, LoaderCircle } from "lucide-react";
 import { cn } from "@/utils/utis";
 import { AppointmentItem } from "@/types/appointment";
-
+import { useSession } from "next-auth/react";
+import { toastMessage } from "@/utils/toast-message";
+import { useState } from "react";
+import { useMutationHook } from "@/hooks/useMutation";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AppointmentsTableProps {
     data: AppointmentItem[];
@@ -12,33 +15,60 @@ interface AppointmentsTableProps {
 }
 
 export function AppointmentsTable({ data, onSort }: AppointmentsTableProps) {
+    const { data: session } = useSession();
+    const queryClient = useQueryClient();
+
+    const isAdmin = session?.user?.role === 'ADMIN';
+
+    const [loadingId, setLoadingId] = useState<string | null>(null);
+
+    const mutation = useMutationHook<void, Error, { id: string, status: string }>({
+        url: ({ id }) => `/schedules/${id}/status`,
+        method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['schedules'] });
+            toastMessage({ message: "Status atualizado com sucesso!", type: "success" });
+            setLoadingId(null);
+        },
+        onError: (error) => {
+            toastMessage({ message: error.message || "Erro ao atualizar", type: "error" });
+            setLoadingId(null);
+        }
+    });
+
+    const handleUpdateStatus = (id: string, newStatus: 'CONFIRMED' | 'CANCELLED') => {
+        setLoadingId(id);
+        mutation.mutate({ id, status: newStatus });
+    };
 
     const getRowColor = (status: string) => {
         switch (status) {
-            case "Agendado": return "bg-teal-200/10";
-            case "Cancelado": return "bg-red-200/20";
+            case "CONFIRMED": return "bg-teal-50";
+            case "CANCELLED": return "bg-red-50";
             default: return "bg-white";
         }
     };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case "Agendado":
+            case "CONFIRMED":
                 return (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-200/20 text-teal-500 border border-teal-500">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700 border border-teal-200">
                         Agendado
                     </span>
                 );
-            case "Cancelado":
+            case "CANCELLED":
                 return (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white text-red-500 border border-red-200">
                         Cancelado
                     </span>
                 );
-            case "Em análise":
             default:
                 return (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white text-zinc-500 border border-zinc-200">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
                         Em análise
                     </span>
                 );
@@ -50,37 +80,41 @@ export function AppointmentsTable({ data, onSort }: AppointmentsTableProps) {
             <table className="w-full text-sm text-left">
                 <thead className="text-xs text-zinc-500 font-semibold bg-white border-b border-zinc-100">
                     <tr>
-                        <th className="px-6 py-4 w-[20%]">
-                            <div
-                                onClick={onSort}
-                                className="flex items-center gap-1 cursor-pointer hover:text-zinc-800">
-                                Data agendamento
-                                <ArrowUpDown className="w-3 h-3" />
+                        <th className="px-6 py-4 cursor-pointer hover:text-zinc-800 transition-colors font-medium" onClick={onSort}>
+                            <div className="flex items-center gap-1">
+                                Data agendamento <ArrowUpDown className="w-3 h-3" />
                             </div>
                         </th>
-                        <th className="px-6 py-4 w-[25%]">Nome</th>
-                        <th className="px-6 py-4 w-[20%] text-center">Sala de agendamento</th>
-                        <th className="px-6 py-4 w-[20%] text-center">Status transação</th>
-                        <th className="px-6 py-4 w-[15%] text-right">Ação</th>
+                        <th className="px-6 py-4 font-medium">Nome</th>
+                        <th className="px-6 py-4 text-center font-medium">Sala</th>
+                        <th className="px-6 py-4 text-center font-medium">Status</th>
+                        <th className="px-6 py-4 text-right font-medium">Ação</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100/50">
+                <tbody className="divide-y divide-zinc-100">
                     {data.map((item) => (
                         <tr key={item.id} className={cn("transition-colors", getRowColor(item.status))}>
 
-                            <td className="px-6 py-4 text-zinc-600 font-medium">
-                                {item.date}
+                            <td className="px-6 py-4">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-semibold text-zinc-900">
+                                        {item.date}
+                                    </span>
+                                    <span className="text-xs text-zinc-500 font-medium mt-0.5">
+                                        {item.startTime}h - {item.endTime}h
+                                    </span>
+                                </div>
                             </td>
 
                             <td className="px-6 py-4">
                                 <div className="flex flex-col">
-                                    <span className="font-semibold text-zinc-900">{item.clientName}</span>
-                                    <span className="text-xs text-zinc-500">{item.role}</span>
+                                    <span className="font-medium text-zinc-900">{item.clientName}</span>
+                                    <span className="text-xs text-zinc-500 capitalize">{item.role}</span>
                                 </div>
                             </td>
 
                             <td className="px-6 py-4 text-center">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-black text-white">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-zinc-900 text-white">
                                     {item.room}
                                 </span>
                             </td>
@@ -90,11 +124,34 @@ export function AppointmentsTable({ data, onSort }: AppointmentsTableProps) {
                             </td>
 
                             <td className="px-6 py-4 text-right">
-                                {item.status !== "Cancelado" && (
-                                    <button type="button" className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white hover:bg-zinc-800 transition-colors cursor-pointer">
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                )}
+                                <div className="flex items-center justify-end gap-2">
+
+                                    {loadingId === item.id ? (
+                                        <LoaderCircle className="w-5 h-5 animate-spin text-zinc-400" />
+                                    ) : (
+                                        <>
+                                            {item.status === 'PENDING' && isAdmin && (
+                                                <button
+                                                    onClick={() => handleUpdateStatus(item.id, 'CONFIRMED')}
+                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white hover:bg-green-600 transition-colors cursor-pointer"
+                                                    title="Aprovar Agendamento"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                </button>
+                                            )}
+
+                                            {item.status !== 'CANCELLED' && (
+                                                <button
+                                                    onClick={() => handleUpdateStatus(item.id, 'CANCELLED')}
+                                                    className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white hover:bg-red-600 transition-colors cursor-pointer"
+                                                    title="Cancelar Agendamento"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
                             </td>
                         </tr>
                     ))}

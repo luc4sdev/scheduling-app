@@ -16,5 +16,13 @@ export const formatDate = (date: string): string => {
     const hours = inputDate.getHours().toString().padStart(2, '0');
     const minutes = inputDate.getMinutes().toString().padStart(2, '0');
 
-    return `${day}/${month}/${year} às ${hours}:${minutes}`;
+    return `${day}/${month}/${year} às ${hours}:${minutes}h`;
 };
+
+
+export function formatDateNative(dateString: string) {
+    if (!dateString) return '';
+    
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+}

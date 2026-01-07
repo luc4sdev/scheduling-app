@@ -75,6 +75,7 @@ export function Sidebar() {
 
     const {
         data: userData,
+        isPending: isLoadingUser
     } = useFetch({
         url: '/users/' + userId,
         options: {
@@ -84,7 +85,7 @@ export function Sidebar() {
     });
 
     const profile = userData as User || {};
-    const displayName = profile.name || session?.user?.name || 'Usuário';
+    const displayName = `${profile.name} ${profile.lastName}` || session?.user?.name || 'Usuário';
     const displayRole = (profile.role || session?.user?.role) === 'ADMIN' ? 'Admin' : 'Cliente';
 
     const handleSignOut = async () => {
@@ -155,12 +156,18 @@ export function Sidebar() {
                     )}
                 >
                     <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-zinc-900 leading-tight">
-                            {displayName}
-                        </span>
-                        <span className="text-xs text-zinc-500 mt-0.5">
-                            {displayRole}
-                        </span>
+                        {isLoadingUser ? (
+                            <div className="w-32 h-4 bg-zinc-200 rounded-md animate-pulse" />
+                        ) : (
+                            <>
+                                <span className="text-sm font-semibold text-zinc-900 leading-tight">
+                                    {displayName}
+                                </span>
+                                <span className="text-xs text-zinc-500 mt-0.5">
+                                    {displayRole}
+                                </span>
+                            </>
+                        )}
                     </div>
                     <ChevronDown
                         className={cn(

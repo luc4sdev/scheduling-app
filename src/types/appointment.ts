@@ -1,6 +1,8 @@
 export interface AppointmentApiResponse {
     id: string;
     date: string;
+    startTime: string;
+    endTime: string;
     status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
     user: {
         id: string;
@@ -18,6 +20,8 @@ export interface AppointmentApiResponse {
 export interface AppointmentItem {
     id: string;
     date: string;
+    startTime: string;
+    endTime: string;
     clientName: string;
     role: string;
     room: string;

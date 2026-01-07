@@ -11,15 +11,21 @@ import { Skeleton } from "@/components/dashboard/skeleton";
 import { AppointmentsTable } from "@/components/dashboard/appointments-table";
 import { AppointmentItem, AppointmentApiResponse } from "@/types/appointment";
 import useFetch from "@/hooks/useFetch";
-import { formatDate } from "@/utils/format-date";
-import { statusMap } from "@/utils/status-translator";
+import { formatDateNative } from "@/utils/format-date";
+import { ScheduleSettingsModal } from "@/components/dashboard/schedule-settings-modal";
+import { useSession } from "next-auth/react";
+import { UserAppointmentModal } from "@/components/dashboard/user-appointment-modal";
 
 
 export default function Appointments() {
+    const { data: session } = useSession();
+    const isAdmin = session?.user.role === 'ADMIN';
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
     const [dateFilter, setDateFilter] = useState("");
     const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
+
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 
     const { data: fetchResponse, isLoading } = useFetch({
@@ -32,11 +38,13 @@ export default function Appointments() {
 
     const appointments: AppointmentItem[] = fetchResponse?.data?.map((item: AppointmentApiResponse) => ({
         id: item.id,
-        date: formatDate(item.date),
+        date: formatDateNative(item.date),
+        startTime: item.startTime,
+        endTime: item.endTime,
         clientName: item.user ? `${item.user.name} ${item.user.lastName}` : 'Usuário desconhecido',
         role: item.user?.role === 'ADMIN' ? 'Admin' : 'Cliente',
         room: item.room?.name || 'Sala removida',
-        status: statusMap[item.status] || item.status
+        status: item.status
     })) || [];
 
     const totalPages = fetchResponse?.totalPages || 1;
@@ -69,7 +77,7 @@ export default function Appointments() {
 
                 <div className="p-6 border-b border-zinc-100 flex flex-col md:flex-row gap-4 justify-between items-center">
 
-                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-1">
+                    <div className="flex flex-col md:flex-row gap-4 w-full flex-1">
                         <div className="relative w-full md:max-w-100">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                             <input
@@ -91,9 +99,9 @@ export default function Appointments() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full md:w-auto">
-                        <Button className="bg-black text-white hover:bg-zinc-800 h-11 px-6 whitespace-nowrap font-medium w-full md:w-auto">
-                            Novo Agendamento
+                    <div className="flex items-center gap-2 w-1/7">
+                        <Button onClick={() => setIsSettingsOpen(true)} className="bg-black text-white hover:bg-zinc-800 h-11 px-6 whitespace-nowrap font-medium w-full">
+                            {isAdmin ? 'Configurações' : 'Novo Agendamento'}
                         </Button>
                     </div>
                 </div>
@@ -106,8 +114,8 @@ export default function Appointments() {
                     ) : appointments.length > 0 ? (
                         <AppointmentsTable data={appointments} onSort={toggleSort} />
                     ) : (
-                        <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
-                            Nenhum agendamento encontrado.
+                        <div className="p-6">
+                            <Skeleton />
                         </div>
                     )}
                 </div>
@@ -135,6 +143,18 @@ export default function Appointments() {
                 </div>
 
             </div>
+            {isAdmin && (
+                <ScheduleSettingsModal
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
+                />
+            )}
+            {!isAdmin && (
+                <UserAppointmentModal
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
+                />
+            )}
         </div>
     );
 }

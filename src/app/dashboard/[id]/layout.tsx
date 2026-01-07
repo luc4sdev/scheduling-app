@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             };
         }
         return {
-            title: "Agendamento",
+            title: "Agendamentos",
             subtitle: isAdmin ? "Acompanhe todos os agendamentos de clientes de forma simples" : "Acompanhe todos os seus agendamentos de forma simples"
         };
     };

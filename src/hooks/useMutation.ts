@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-query';
 
 type UseMutationHookOptions<TData, TError, TVariables> = {
-    url: string;
+    url: string | ((variables: TVariables) => string);
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     baseUrl?: string;
     invalidateQueries?: (string | number)[][];
@@ -29,7 +29,8 @@ export const useMutationHook = <
 
     return useMutation<TData, TError, TVariables>({
         mutationFn: async (variables: TVariables) => {
-            const response = await fetch(`${baseUrl}${url}`, {
+            const urlPath = typeof url === 'function' ? url(variables) : url;
+            const response = await fetch(`${baseUrl}${urlPath}`, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
@@ -38,6 +39,7 @@ export const useMutationHook = <
                 credentials: 'include',
                 body: method !== 'GET' ? JSON.stringify(variables) : undefined,
             });
+
 
             if (!response.ok) {
                 const errorBody = await response.json().catch(() => ({}));
