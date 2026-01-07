@@ -4,11 +4,7 @@ import { LogsTable } from "@/components/dashboard/logs-table";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { LogItem, LogApiResponse } from "@/types/log";
 import useFetch from "@/hooks/useFetch";
-import {
-    Search,
-    ChevronLeft,
-    ChevronRight,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { formatDate } from "@/utils/format-date";
 import { useSession } from "next-auth/react";
@@ -23,7 +19,7 @@ export default function Logs() {
     const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC');
 
     const { data: fetchResponse, isLoading } = useFetch({
-        url: `/logs?page=${page}&limit=10&query=${search}&date=${dateFilter}&order=${sortOrder}`,
+        url: `/logs?page=${page}&limit=7&query=${search}&date=${dateFilter}&order=${sortOrder}`,
         options: {
             method: 'GET',
         },
@@ -39,14 +35,6 @@ export default function Logs() {
     })) || [];
 
     const totalPages = fetchResponse?.totalPages || 1;
-
-    const handlePreviousPage = () => {
-        if (page > 1) setPage((prev) => prev - 1);
-    };
-
-    const handleNextPage = () => {
-        if (page < totalPages) setPage((prev) => prev + 1);
-    };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
@@ -96,36 +84,12 @@ export default function Logs() {
                             <Skeleton />
                         </div>
                     ) : logs.length > 0 ? (
-                        <LogsTable logs={logs} onSort={toggleSort} isAdmin={isAdmin} />
+                        <LogsTable logs={logs} onSort={toggleSort} isAdmin={isAdmin} page={page} totalPages={totalPages} onPageChange={setPage} />
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
                             Nenhum registro encontrado.
                         </div>
                     )}
-                </div>
-
-                <div className="p-4 border-t border-zinc-100 flex justify-center items-center gap-2 mt-auto">
-                    <button
-                        onClick={handlePreviousPage}
-                        type="button"
-                        disabled={page === 1 || isLoading}
-                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-md text-sm font-medium">
-                        {page}
-                    </span>
-
-                    <button
-                        onClick={handleNextPage}
-                        type="button"
-                        disabled={page >= totalPages || isLoading}
-                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
                 </div>
             </div>
         </div>

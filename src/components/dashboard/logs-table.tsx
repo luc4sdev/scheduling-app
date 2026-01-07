@@ -1,4 +1,4 @@
-import { ArrowUpDown } from "lucide-react";
+import { DataTable, ColumnDef } from "@/components/ui/data-table";
 import { ModuleBadge } from "./module-badge";
 import { LogItem } from "@/types/log";
 
@@ -6,58 +6,58 @@ interface LogsTableProps {
     logs: LogItem[];
     onSort: () => void;
     isAdmin: boolean;
+    page?: number;
+    totalPages?: number;
+    onPageChange?: (page: number) => void;
 }
-export function LogsTable({ logs, onSort, isAdmin }: LogsTableProps) {
+
+export function LogsTable({ logs, onSort, isAdmin, page = 1, totalPages = 1, onPageChange = () => { } }: LogsTableProps) {
+
+    const columns: ColumnDef<LogItem>[] = [
+        ...(isAdmin ? [{
+            header: "Cliente",
+            className: "w-[30%]",
+            cell: (log: LogItem) => (
+                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+                    {log.clientName || 'Usuário'}
+                </span>
+            )
+        }] : []),
+        {
+            header: "Tipo de atividade",
+            className: "w-[20%]",
+            cell: (log) => (
+                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+                    {log.activityType}
+                </span>
+            )
+        },
+        {
+            header: "Módulo",
+            className: "w-[20%]",
+            cell: (log) => <ModuleBadge module={log.module} />
+        },
+        {
+            header: "Data e horário",
+            className: "w-[20%] text-zinc-600 font-medium",
+            onSort: onSort,
+            cell: (log) => (
+                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+                    {log.date}
+                </span>
+            )
+        }
+    ];
 
     return (
-        <div className="flex-1 w-full overflow-x-auto">
-            <table className="w-full text-sm text-left">
-                <thead className="text-xs text-zinc-500 font-semibold bg-white border-b border-zinc-100">
-                    <tr>
-                        {isAdmin && <th className="px-6 py-4 w-[30%] font-medium">Cliente</th>}
-                        <th className="px-6 py-4 w-[20%] font-medium">Tipo de atividade</th>
-                        <th className="px-6 py-4 w-[20%] font-medium">Módulo</th>
-                        <th className="px-6 py-4 w-[20%] font-medium">
-                            <div
-                                onClick={onSort}
-                                className="flex items-center gap-1 cursor-pointer hover:text-zinc-800"
-                            >
-                                Data e horário
-                                <ArrowUpDown className="w-3 h-3" />
-                            </div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100/50">
-                    {logs.map((log) => (
-                        <tr key={log.id} className="hover:bg-zinc-50/50 transition-colors bg-white">
-
-                            {isAdmin && (
-                                <td className="px-6 py-4">
-                                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
-                                        {log.clientName || 'Usuário'}
-                                    </span>
-                                </td>
-                            )}
-                            <td className="px-6 py-4">
-                                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
-                                    {log.activityType}
-                                </span>
-                            </td>
-
-                            <td className="px-6 py-4">
-                                <ModuleBadge module={log.module} />
-                            </td>
-
-                            <td className="px-6 py-4 text-zinc-600 font-medium">
-                                <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
-                                    {log.date}
-                                </span>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    )
-}           
+        <DataTable
+            data={logs}
+            columns={columns}
+            pagination={{
+                currentPage: page,
+                totalPages: totalPages,
+                onPageChange: onPageChange
+            }}
+        />
+    );
+}

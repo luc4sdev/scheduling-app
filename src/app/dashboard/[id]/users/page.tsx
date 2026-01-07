@@ -1,11 +1,7 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import {
-    Search,
-    ChevronLeft,
-    ChevronRight,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { UsersTable } from "@/components/dashboard/users-table";
 import { UserItem, UserApiResponse } from "@/types/user";
@@ -35,7 +31,7 @@ export default function UsersPage() {
     }, [session, status, router]);
 
     const { data: fetchResponse, isLoading } = useFetch({
-        url: `/users?page=${page}&limit=8&query=${search}&date=${dateFilter}&order=${sortOrder}`,
+        url: `/users?page=${page}&limit=7&query=${search}&date=${dateFilter}&order=${sortOrder}`,
         options: { method: 'GET' },
         cacheKeys: ['users', page, search, dateFilter, sortOrder],
     });
@@ -113,9 +109,6 @@ export default function UsersPage() {
         setSortOrder(prev => prev === 'DESC' ? 'ASC' : 'DESC');
     };
 
-    const handlePreviousPage = () => { if (page > 1) setPage((prev) => prev - 1); };
-    const handleNextPage = () => { if (page < totalPages) setPage((prev) => prev + 1); };
-
     return (
         <div className="flex flex-col gap-6">
             <div className="bg-white rounded-lg border border-zinc-200 shadow-sm min-h-190 flex flex-col">
@@ -155,34 +148,15 @@ export default function UsersPage() {
                             onSort={toggleSort}
                             onToggleStatus={handleToggleStatus}
                             onTogglePermission={handleTogglePermission}
+                            page={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
                         />
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
                             Nenhum cliente encontrado.
                         </div>
                     )}
-                </div>
-
-                <div className="p-4 border-t border-zinc-100 flex justify-center items-center gap-2 mt-auto">
-                    <button
-                        onClick={handlePreviousPage}
-                        disabled={page === 1 || isLoading}
-                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-md text-sm font-medium">
-                        {page}
-                    </span>
-
-                    <button
-                        onClick={handleNextPage}
-                        disabled={page >= totalPages || isLoading}
-                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
                 </div>
             </div>
         </div>

@@ -104,7 +104,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
         <div className="min-h-screen">
             <Sidebar />
-            <div className="ml-64 flex flex-col min-h-screen">
+            <div className="md:ml-64 flex flex-col min-h-screen">
                 <Header
                     title={headerInfo.title}
                     subtitle={headerInfo.subtitle}

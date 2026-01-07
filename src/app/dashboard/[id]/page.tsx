@@ -1,11 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import {
-    Search,
-    ChevronLeft,
-    ChevronRight,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/dashboard/skeleton";
 import { AppointmentsTable } from "@/components/dashboard/appointments-table";
@@ -29,7 +25,7 @@ export default function Appointments() {
 
 
     const { data: fetchResponse, isLoading } = useFetch({
-        url: `/schedules?page=${page}&limit=8&query=${search}&date=${dateFilter}&order=${sortOrder}`,
+        url: `/schedules?page=${page}&limit=7&query=${search}&date=${dateFilter}&order=${sortOrder}`,
         options: {
             method: 'GET',
         },
@@ -48,14 +44,6 @@ export default function Appointments() {
     })) || [];
 
     const totalPages = fetchResponse?.totalPages || 1;
-
-    const handlePreviousPage = () => {
-        if (page > 1) setPage((prev) => prev - 1);
-    };
-
-    const handleNextPage = () => {
-        if (page < totalPages) setPage((prev) => prev + 1);
-    };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
@@ -99,7 +87,7 @@ export default function Appointments() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-1/7">
+                    <div className="flex items-center gap-2 w-full md:w-1/7">
                         <Button onClick={() => setIsSettingsOpen(true)} className="bg-black text-white hover:bg-zinc-800 h-11 px-6 whitespace-nowrap font-medium w-full">
                             {isAdmin ? 'Configurações' : 'Novo Agendamento'}
                         </Button>
@@ -112,34 +100,12 @@ export default function Appointments() {
                             <Skeleton />
                         </div>
                     ) : appointments.length > 0 ? (
-                        <AppointmentsTable data={appointments} onSort={toggleSort} />
+                        <AppointmentsTable data={appointments} onSort={toggleSort} page={page} totalPages={totalPages} onPageChange={setPage} />
                     ) : (
                         <div className="p-6">
                             <Skeleton />
                         </div>
                     )}
-                </div>
-
-                <div className="p-4 border-t border-zinc-100 flex justify-center items-center gap-2 mt-auto">
-                    <button
-                        onClick={handlePreviousPage}
-                        disabled={page === 1 || isLoading}
-                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </button>
-
-                    <span className="w-8 h-8 flex items-center justify-center bg-black text-white rounded-md text-sm font-medium">
-                        {page}
-                    </span>
-
-                    <button
-                        onClick={handleNextPage}
-                        disabled={page >= totalPages || isLoading}
-                        className="p-2 rounded-md hover:bg-zinc-100 disabled:opacity-50 text-black transition-colors cursor-pointer"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
                 </div>
 
             </div>
