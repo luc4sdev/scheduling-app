@@ -55,7 +55,17 @@ export default function Signin() {
                     router.push(`/dashboard/${user.id}`);
                 }
             } else {
-                toastMessage({ message: "Email ou senha inválidos", type: "error" });
+                if (res?.error === "Configuration" || res?.error?.includes("Configuration")) {
+                    toastMessage({
+                        message: "Sua conta foi desativada. Entre em contato com o suporte.",
+                        type: "error"
+                    });
+                } else {
+                    toastMessage({
+                        message: "Email ou senha inválidos",
+                        type: "error"
+                    });
+                }
             }
         } catch {
             toastMessage({ message: "Erro ao tentar fazer login", type: "error" });

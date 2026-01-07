@@ -1,6 +1,11 @@
-export function Skeleton() {
+import type { ComponentProps } from "react";
+import { twMerge } from "tailwind-merge";
+
+type SkeletonProps = ComponentProps<"div">
+
+export function Skeleton({ className, ...props }: SkeletonProps) {
     return (
-        <div className="flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500">
+        <div className={twMerge("flex-1 flex flex-col items-center justify-center p-12 text-center animate-in fade-in duration-500", className)} {...props}>
             <div className="w-48 h-48 bg-zinc-50 rounded-full flex items-center justify-center mb-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-blue-50/50 rounded-full" />
                 <div className="relative z-10 opacity-20">

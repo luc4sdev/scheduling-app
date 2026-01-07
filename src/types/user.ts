@@ -12,6 +12,20 @@ export interface User {
     city: string;
     state: string;
     role: 'USER' | 'ADMIN';
+    permissions: string[];
+    isActive: boolean;
     createdAt: string;
     updatedAt: string;
+}
+
+export type UserApiResponse = Omit<User, 'password'>;
+
+export interface UserItem {
+    id: string;
+    date: string;
+    name: string;
+    role: string;
+    address: string;
+    permissions: string[];
+    isActive: boolean;
 }

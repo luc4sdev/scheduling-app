@@ -5,7 +5,7 @@ export interface LogApiResponse {
   module: string;
   details?: Record<string, unknown> | null;
   createdAt: string;
-  user?: { 
+  user: { 
     id: string;
     name: string;
     lastName: string;

@@ -12,6 +12,7 @@ import { cn } from "@/utils/utis";
 import { Button } from "@/components/ui/button";
 import { SignupHeader } from "@/components/signup-header";
 import { getSession, signIn } from "next-auth/react";
+import { fetchCep } from "@/utils/fetch-cep";
 
 const signUpSchema = z.object({
     name: z.string().min(2, "Mínimo 2 letras"),
@@ -44,34 +45,48 @@ export default function Signup() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
     const [addressVisible, setAddressVisible] = useState(false);
+    const [isManualAddress, setIsManualAddress] = useState(false);
+    const [isLoadingCep, setIsLoadingCep] = useState(false);
 
     const cepValue = watch("cep");
+
+    const enableManualEntry = () => {
+        setAddressVisible(true);
+        setIsManualAddress(true);
+    };
 
     useEffect(() => {
         const fetchAddress = async () => {
             const cleanCep = cepValue?.replace(/\D/g, '');
 
             if (cleanCep?.length === 8) {
-                setIsLoading(true);
+                setIsLoadingCep(true);
                 try {
-                    const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-                    const data = await response.json();
+                    // Tenta buscar na API
+                    const data = await fetchCep(cleanCep);
 
                     if (!data.erro) {
                         setValue("street", data.logradouro);
                         setValue("neighborhood", data.bairro);
                         setValue("city", data.localidade);
                         setValue("state", data.uf);
+
                         setAddressVisible(true);
+                        setIsManualAddress(false);
                         document.getElementById("number")?.focus();
                     } else {
-                        toastMessage({ message: "CEP não encontrado", type: "error" });
+                        toastMessage({ message: "CEP não encontrado. Preencha o endereço manualmente.", type: "info" });
+                        enableManualEntry();
+                        document.getElementById("street")?.focus();
                     }
                 } catch {
-                    toastMessage({ message: "Erro ao buscar CEP", type: "error" });
+                    toastMessage({ message: "Erro ao buscar CEP. Preencha manualmente.", type: "error" });
+                    enableManualEntry();
+                } finally {
+                    setIsLoadingCep(false);
                 }
-                setIsLoading(false);
             }
         };
 
@@ -106,8 +121,7 @@ export default function Signup() {
             if (signInResult?.ok) {
                 const session = await getSession();
                 const user = session?.user;
-                const token = session?.user.token;
-                if (user && token) {
+                if (user) {
                     router.push(`/dashboard/${user.id}`);
                 }
             } else {
@@ -199,17 +213,35 @@ export default function Signup() {
                                 {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
                             </div>
 
-                            <div className="flex flex-col gap-2">
-                                <LabelPrimitive.Root htmlFor="cep" className="text-sm font-bold text-zinc-700">
-                                    CEP <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
-                                </LabelPrimitive.Root>
-                                <input
-                                    id="cep"
-                                    placeholder="00000-000"
-                                    maxLength={9}
-                                    className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                    {...register("cep")}
-                                />
+                            <div className="flex flex-col gap-2 relative">
+                                <div className="flex justify-between items-center">
+                                    <LabelPrimitive.Root htmlFor="cep" className="text-sm font-bold text-zinc-700">
+                                        CEP <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                                    </LabelPrimitive.Root>
+
+                                    <button
+                                        type="button"
+                                        onClick={enableManualEntry}
+                                        className="text-xs text-zinc-500 hover:text-zinc-900 underline cursor-pointer"
+                                    >
+                                        Preencher manualmente
+                                    </button>
+                                </div>
+
+                                <div className="relative">
+                                    <input
+                                        id="cep"
+                                        placeholder="00000-000"
+                                        maxLength={9}
+                                        className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
+                                        {...register("cep")}
+                                    />
+                                    {isLoadingCep && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <LoaderCircle className="w-4 h-4 animate-spin text-zinc-500" />
+                                        </div>
+                                    )}
+                                </div>
                                 {errors.cep && <span className="text-xs text-red-500">{errors.cep.message}</span>}
                             </div>
 
@@ -222,10 +254,15 @@ export default function Signup() {
                                     <div className="flex flex-col gap-2">
                                         <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Endereço</LabelPrimitive.Root>
                                         <input
-                                            readOnly
-                                            className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-100 text-zinc-600 px-3 py-2 text-sm outline-none cursor-not-allowed"
+                                            readOnly={!isManualAddress}
+                                            id="street"
+                                            className={cn(
+                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
+                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
+                                            )}
                                             {...register("street")}
                                         />
+                                        {errors.street && <span className="text-xs text-red-500">{errors.street.message}</span>}
                                     </div>
 
                                     <div className="flex flex-col gap-2">
@@ -252,28 +289,40 @@ export default function Signup() {
                                     <div className="flex flex-col gap-2">
                                         <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Bairro</LabelPrimitive.Root>
                                         <input
-                                            readOnly
-                                            className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-100 text-zinc-600 px-3 py-2 text-sm outline-none cursor-not-allowed"
+                                            readOnly={!isManualAddress}
+                                            className={cn(
+                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
+                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
+                                            )}
                                             {...register("neighborhood")}
                                         />
+                                        {errors.neighborhood && <span className="text-xs text-red-500">{errors.neighborhood.message}</span>}
                                     </div>
 
                                     <div className="flex flex-col gap-2">
                                         <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Cidade</LabelPrimitive.Root>
                                         <input
-                                            readOnly
-                                            className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-100 text-zinc-600 px-3 py-2 text-sm outline-none cursor-not-allowed"
+                                            readOnly={!isManualAddress}
+                                            className={cn(
+                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
+                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
+                                            )}
                                             {...register("city")}
                                         />
+                                        {errors.city && <span className="text-xs text-red-500">{errors.city.message}</span>}
                                     </div>
 
                                     <div className="flex flex-col gap-2">
                                         <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Estado</LabelPrimitive.Root>
                                         <input
-                                            readOnly
-                                            className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-100 text-zinc-600 px-3 py-2 text-sm outline-none cursor-not-allowed"
+                                            readOnly={!isManualAddress}
+                                            className={cn(
+                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
+                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
+                                            )}
                                             {...register("state")}
                                         />
+                                        {errors.state && <span className="text-xs text-red-500">{errors.state.message}</span>}
                                     </div>
                                 </div>
                             </div>

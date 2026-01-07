@@ -11,8 +11,12 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { formatDate } from "@/utils/format-date";
+import { useSession } from "next-auth/react";
 
 export default function Logs() {
+    const { data: session } = useSession();
+    const isAdmin = session?.user?.role === 'ADMIN';
+
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
     const [dateFilter, setDateFilter] = useState("");
@@ -30,6 +34,7 @@ export default function Logs() {
         id: item.id,
         activityType: item.action,
         module: item.module,
+        clientName: `${item.user?.name} ${item.user?.lastName}` || 'Cliente',
         date: formatDate(item.createdAt)
     })) || [];
 
@@ -91,7 +96,7 @@ export default function Logs() {
                             <Skeleton />
                         </div>
                     ) : logs.length > 0 ? (
-                        <LogsTable data={logs} onSort={toggleSort} />
+                        <LogsTable logs={logs} onSort={toggleSort} isAdmin={isAdmin} />
                     ) : (
                         <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
                             Nenhum registro encontrado.

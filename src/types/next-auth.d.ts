@@ -8,13 +8,16 @@ declare module "next-auth" {
       id: string;
       role: string;
       token: string;
-      isSubscribed: boolean;
+      permissions: string[];
+      isActive: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
     id: string;
     role: string;
+    permissions: string[];
+    isActive: boolean;
     token: string;
   }
 }
@@ -23,6 +26,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: string;
+    permissions: string[];
+    isActive: boolean;
     token: string;
   }
 }

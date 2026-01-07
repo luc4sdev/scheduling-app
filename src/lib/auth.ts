@@ -42,18 +42,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         if (!profileRes.ok) return null;
 
                         const userData = await profileRes.json();
+
+                        if (userData.isActive === false) {
+                            throw new Error("inactive");
+                        }
                         
                         return {
                             id: userData.id,
                             name: userData.name,
                             email: userData.email,
                             role: userData.role,
+                            permissions: userData.permissions,
+                            isActive: userData.isActive,
                             token: data.token,
                         };
                     }
 
                     return null;
                 } catch (error) {
+                    if (error instanceof Error && error.message === "inactive") {
+                        throw error;
+                    }
                     console.error("Erro no authorize:", error);
                     return null;
                 }
@@ -68,6 +77,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.permissions = user.permissions;
+                token.isActive = user.isActive;
                 token.token = user.token;
             }
 
@@ -81,6 +92,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (token) {
                 session.user.id = token.id;
                 session.user.role = token.role;
+                session.user.permissions = token.permissions;
+                session.user.isActive = token.isActive;
                 session.user.token = token.token;
             }
             return session;

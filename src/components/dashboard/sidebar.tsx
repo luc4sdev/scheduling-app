@@ -6,7 +6,8 @@ import {
     ListCheck,
     User as UserIcon,
     ChevronDown,
-    LogOut
+    LogOut,
+    Users
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -16,15 +17,49 @@ import { useSession, signOut } from 'next-auth/react'
 import useFetch from '@/hooks/useFetch'
 import { User } from '@/types/user'
 
-const navItems = [
-    { label: 'Agendamentos', icon: Calendar, href: '/dashboard/[id]', exact: true },
-    { label: 'Logs', icon: ListCheck, href: '/dashboard/[id]/logs', exact: false },
-    { label: 'Minha Conta', icon: UserIcon, href: '/dashboard/[id]/profile', exact: false },
-]
-
 export function Sidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
+
+    const user = session?.user;
+    const isAdmin = user?.role === 'ADMIN';
+    const permissions = user?.permissions || [];
+
+    const navItems = [];
+
+    if (isAdmin || permissions.includes('APPOINTMENTS')) {
+        navItems.push({
+            label: 'Agendamentos',
+            icon: Calendar,
+            href: '/dashboard/[id]',
+            exact: true
+        });
+    }
+
+    if (isAdmin || permissions.includes('LOGS')) {
+        navItems.push({
+            label: 'Logs',
+            icon: ListCheck,
+            href: '/dashboard/[id]/logs',
+            exact: false
+        });
+    }
+
+    if (isAdmin) {
+        navItems.push({
+            label: 'Clientes',
+            icon: Users,
+            href: '/dashboard/[id]/users',
+            exact: false
+        });
+    }
+
+    navItems.push({
+        label: 'Minha Conta',
+        icon: UserIcon,
+        href: '/dashboard/[id]/profile',
+        exact: false
+    });
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -47,9 +82,10 @@ export function Sidebar() {
         },
         cacheKeys: ['profile'],
     });
+
     const profile = userData as User || {};
-    const displayName = profile.name || 'Cliente';
-    const displayRole = profile.role === 'ADMIN' ? 'Admin' : 'Cliente';
+    const displayName = profile.name || session?.user?.name || 'Usuário';
+    const displayRole = (profile.role || session?.user?.role) === 'ADMIN' ? 'Admin' : 'Cliente';
 
     const handleSignOut = async () => {
         await signOut({

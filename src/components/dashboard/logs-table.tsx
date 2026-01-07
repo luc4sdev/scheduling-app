@@ -3,18 +3,21 @@ import { ModuleBadge } from "./module-badge";
 import { LogItem } from "@/types/log";
 
 interface LogsTableProps {
-    data: LogItem[];
+    logs: LogItem[];
     onSort: () => void;
+    isAdmin: boolean;
 }
-export function LogsTable({ data, onSort }: LogsTableProps) {
+export function LogsTable({ logs, onSort, isAdmin }: LogsTableProps) {
+
     return (
         <div className="flex-1 w-full overflow-x-auto">
             <table className="w-full text-sm text-left">
                 <thead className="text-xs text-zinc-500 font-semibold bg-white border-b border-zinc-100">
                     <tr>
-                        <th className="px-6 py-4 w-[40%] font-medium">Tipo de atividade</th>
-                        <th className="px-6 py-4 w-[30%] font-medium">Módulo</th>
-                        <th className="px-6 py-4 w-[30%] font-medium">
+                        {isAdmin && <th className="px-6 py-4 w-[30%] font-medium">Cliente</th>}
+                        <th className="px-6 py-4 w-[20%] font-medium">Tipo de atividade</th>
+                        <th className="px-6 py-4 w-[20%] font-medium">Módulo</th>
+                        <th className="px-6 py-4 w-[20%] font-medium">
                             <div
                                 onClick={onSort}
                                 className="flex items-center gap-1 cursor-pointer hover:text-zinc-800"
@@ -26,9 +29,16 @@ export function LogsTable({ data, onSort }: LogsTableProps) {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100/50">
-                    {data.map((log) => (
+                    {logs.map((log) => (
                         <tr key={log.id} className="hover:bg-zinc-50/50 transition-colors bg-white">
 
+                            {isAdmin && (
+                                <td className="px-6 py-4">
+                                    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
+                                        {log.clientName || 'Usuário'}
+                                    </span>
+                                </td>
+                            )}
                             <td className="px-6 py-4">
                                 <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
                                     {log.activityType}
