@@ -37,6 +37,11 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
     const { data: session } = useSession();
     const queryClient = useQueryClient();
 
+    const getToday = () => {
+        const today = new Date();
+        return today.toLocaleDateString('en-CA');
+    };
+
     const {
         register,
         handleSubmit,
@@ -46,12 +51,15 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
         formState: { errors }
     } = useForm<AppointmentSchemaType>({
         resolver: zodResolver(appointmentSchema),
+        defaultValues: {
+            date: getToday(),
+            roomId: "",
+            startTime: ""
+        }
     });
 
     const selectedDate = watch("date");
     const selectedRoomId = watch("roomId");
-
-
 
     const { data: rooms = [], isPending: isLoadingRooms } = useFetch({
         url: `/rooms`,
@@ -70,7 +78,13 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
     });
 
     useEffect(() => {
-        if (!isOpen) reset();
+        if (isOpen) {
+            reset({
+                date: getToday(),
+                roomId: "",
+                startTime: ""
+            });
+        }
     }, [isOpen, reset]);
 
     useEffect(() => {
@@ -117,9 +131,8 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
                                 errors.date ? "border-red-500" : "border-zinc-200"
                             )}
                             {...register("date")}
-                            min={new Date().toISOString().split('T')[0]}
+                            min={getToday()}
                         />
-
                     </div>
                     {errors.date && <span className="text-xs text-red-500">{errors.date.message}</span>}
                 </div>
