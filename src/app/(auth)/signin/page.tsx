@@ -9,9 +9,9 @@ import { z } from 'zod';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
-import { SigninHeader } from "@/components/signin-header";
+import { AuthHeader } from "@/components/auth/auth-header";
 
 const signInSchema = z.object({
     email: z.email("Insira um email válido"),
@@ -75,7 +75,7 @@ export default function Signin() {
 
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#F5F4F2]">
-            <SigninHeader router={router} />
+            <AuthHeader router={router} />
             <main className="flex-1 flex items-center justify-center p-4">
                 <div className="w-full max-w-105 flex flex-col items-center">
 

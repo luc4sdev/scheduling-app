@@ -1,4 +1,4 @@
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 
 interface PermissionTagProps {
     label: string;

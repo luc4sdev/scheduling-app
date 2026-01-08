@@ -8,9 +8,9 @@ import { z } from 'zod';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
-import { SignupHeader } from "@/components/signup-header";
+import { AuthHeader } from "@/components/auth/auth-header";
 import { getSession, signIn } from "next-auth/react";
 import { fetchCep } from "@/utils/fetch-cep";
 
@@ -137,7 +137,7 @@ export default function Signup() {
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#F5F4F2]">
 
-            <SignupHeader router={router} />
+            <AuthHeader router={router} />
 
             <main className="flex-1 flex items-center justify-center p-6 mb-10">
                 <div className="w-full max-w-125 flex flex-col items-center">
@@ -332,7 +332,7 @@ export default function Signup() {
                                 disabled={isLoading || !isValid}
                                 className={cn(
                                     "mt-4 w-full transition-all duration-300",
-                                    !isValid ? "bg-zinc-300 text-white cursor-not-allowed hover:bg-zinc-300" : "bg-black text-white hover:bg-zinc-800"
+                                    !isValid ? "bg-zinc-300 text-zinc-900 cursor-not-allowed hover:bg-zinc-300" : "bg-black text-white hover:bg-zinc-800"
                                 )}
                             >
                                 {isLoading ? (

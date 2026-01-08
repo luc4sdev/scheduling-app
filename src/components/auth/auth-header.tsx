@@ -1,11 +1,15 @@
 import Image from "next/image";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { usePathname } from "next/navigation";
+
 
 interface LoginHeaderProps {
     router: AppRouterInstance;
 }
-export function SigninHeader({ router }: LoginHeaderProps) {
+export function AuthHeader({ router }: LoginHeaderProps) {
+
+    const pathName = usePathname();
     return (
         <header className="w-full h-20 bg-[#F5F4F2] flex items-center justify-between px-6 md:px-12 border-b border-gray-300">
             <div className="w-10 h-10 relative">
@@ -20,9 +24,9 @@ export function SigninHeader({ router }: LoginHeaderProps) {
             <Button
                 variant="default"
                 className="bg-black text-white hover:bg-zinc-800 h-9 px-6 text-xs font-medium tracking-wide"
-                onClick={() => router.push('/signup')}
+                onClick={() => router.push(pathName === '/signin' ? '/signup' : '/signin')}
             >
-                Cadastre-se
+                {pathName === '/signin' ? 'Cadastre-se' : 'Login'}
             </Button>
         </header>
     )

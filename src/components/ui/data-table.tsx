@@ -1,7 +1,7 @@
 'use client'
 
 import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 import { ReactNode } from "react";
 
 export interface ColumnDef<T> {

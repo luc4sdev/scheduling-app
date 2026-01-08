@@ -7,11 +7,13 @@ import { z } from 'zod';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { fetchCep } from "@/utils/fetch-cep";
+import useFetch from "@/hooks/useFetch";
+import { useMutationHook } from "@/hooks/useMutation";
 
 interface PayloadUser {
     name: string;
@@ -77,20 +79,12 @@ export default function Profile() {
         setIsManualAddress(true);
     };
 
-    const { data: userData, isLoading: isLoadingData } = useQuery({
-        queryKey: ['profile', session?.user?.id],
-        queryFn: async () => {
-            if (!session?.user?.token) return null;
-
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/me`, {
-                headers: {
-                    Authorization: `Bearer ${session.user.token}`
-                }
-            });
-            if (!res.ok) throw new Error('Falha ao buscar perfil');
-            return await res.json();
+    const { data: userData, isLoading: isLoadingData } = useFetch({
+        url: '/me',
+        options: {
+            method: 'GET',
         },
-        enabled: !!session?.user?.token
+        cacheKeys: ['profile'],
     });
 
     useEffect(() => {
@@ -113,49 +107,21 @@ export default function Profile() {
         }
     }, [userData, reset]);
 
-    const mutation = useMutation({
-        mutationFn: async (data: ProfileSchemaType) => {
-            const payload: PayloadUser = {
-                name: data.firstName,
-                lastName: data.lastName,
-                email: data.email,
-                cep: data.cep,
-                street: data.street,
-                number: data.number,
-                complement: data.complement,
-                neighborhood: data.neighborhood,
-                city: data.city,
-                state: data.state
-            };
-
-            if (data.password && data.password.length >= 6) {
-                payload.password = data.password;
-            }
-
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${session?.user?.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session?.user?.token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Erro ao atualizar');
-            }
-
-            return await res.json();
+    const mutation = useMutationHook<void, Error, PayloadUser>({
+        url: `/users/${session?.user?.id}`,
+        method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
         },
         onSuccess: () => {
-            toastMessage({ message: "Perfil atualizado com sucesso!", type: "success" });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            toastMessage({ message: "Perfil atualizado com sucesso!", type: "success" });
         },
         onError: () => {
             toastMessage({ message: "Erro ao atualizar perfil", type: "error" });
         }
     });
+
 
     const cepValue = watch("cep");
 
@@ -195,7 +161,23 @@ export default function Profile() {
         }
     }, [cepValue, setValue, userData]);
 
-    async function handleSave(data: ProfileSchemaType) {
+    async function handleSave(profileData: ProfileSchemaType) {
+        const data: PayloadUser = {
+            name: profileData.firstName,
+            lastName: profileData.lastName,
+            email: profileData.email,
+            cep: profileData.cep,
+            street: profileData.street,
+            number: profileData.number,
+            complement: profileData.complement,
+            neighborhood: profileData.neighborhood,
+            city: profileData.city,
+            state: profileData.state
+        };
+
+        if (profileData.password && profileData.password.length >= 6) {
+            data.password = profileData.password;
+        }
         mutation.mutate(data);
     }
 

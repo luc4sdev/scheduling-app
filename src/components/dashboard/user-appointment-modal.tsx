@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, LoaderCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toastMessage } from "@/utils/toast-message";
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 import useFetch from "@/hooks/useFetch";
 import { useMutationHook } from "@/hooks/useMutation";
 import { useQueryClient } from "@tanstack/react-query";

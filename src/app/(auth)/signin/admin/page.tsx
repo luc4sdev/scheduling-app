@@ -10,7 +10,7 @@ import { z } from 'zod';
 import * as LabelPrimitive from '@radix-ui/react-label';
 import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
-import { cn } from "@/utils/utis";
+import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
 
 const signInSchema = z.object({

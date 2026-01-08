@@ -9,8 +9,9 @@ import useFetch from "@/hooks/useFetch";
 import { formatDate } from "@/utils/format-date";
 import { toastMessage } from "@/utils/toast-message";
 import { useSession } from "next-auth/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useMutationHook } from "@/hooks/useMutation";
 
 export default function UsersPage() {
     const { data: session, status } = useSession();
@@ -48,35 +49,23 @@ export default function UsersPage() {
 
     const totalPages = fetchResponse?.totalPages || 1;
 
-    const mutation = useMutation({
-        mutationFn: async ({ id, payload }: { id: string, payload: Partial<UserApiResponse> }) => {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session?.user?.token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Erro ao atualizar');
-            }
-
-            return res.json();
+    const mutation = useMutationHook<void, Error, Partial<UserApiResponse>>({
+        url: ({ id }) => `/users/${id}`,
+        method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
         },
         onSuccess: () => {
-            toastMessage({ message: "Dados atualizados com sucesso", type: "success" });
             queryClient.invalidateQueries({ queryKey: ['users'] });
+            toastMessage({ message: "Dados atualizados com sucesso", type: "success" });
         },
         onError: () => {
             toastMessage({ message: "Erro ao atualizar cliente", type: "error" });
         }
     });
 
-    function updateUser(userId: string, payload: Partial<UserApiResponse>) {
-        mutation.mutate({ id: userId, payload });
+    function updateUser(userId: string, data: Partial<UserApiResponse>) {
+        mutation.mutate({ id: userId, ...data });
     }
 
     const handleToggleStatus = (id: string, currentStatus: boolean) => {
