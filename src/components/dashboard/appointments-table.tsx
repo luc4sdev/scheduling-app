@@ -8,6 +8,7 @@ import { useState } from "react";
 import { useMutationHook } from "@/hooks/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { DataTable, ColumnDef } from "@/components/ui/data-table";
+import { sendSchedulingConfirmation } from "@/utils/send-email";
 
 interface AppointmentsTableProps {
     data: AppointmentItem[];
@@ -16,7 +17,7 @@ interface AppointmentsTableProps {
     totalPages?: number;
     onPageChange?: (page: number) => void;
 }
-
+interface ScheduleResponse { userEmail: string, userName: string, dateString: string, time: string }
 export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPageChange = () => { } }: AppointmentsTableProps) {
     const { data: session } = useSession();
     const queryClient = useQueryClient();
@@ -24,13 +25,17 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
 
     const [loadingId, setLoadingId] = useState<string | null>(null);
 
-    const mutation = useMutationHook<void, Error, { id: string, status: string }>({
+    const mutation = useMutationHook<ScheduleResponse, Error, { id: string, status: string }>({
         url: ({ id }) => `/schedules/${id}/status`,
         method: 'PATCH',
         headers: {
             Authorization: `Bearer ${session?.user?.token}`
         },
-        onSuccess: () => {
+        onSuccess: async (data) => {
+            const { userEmail, userName, dateString, time } = data
+            try {
+                await sendSchedulingConfirmation(userEmail, userName, dateString, time)
+            } catch { }
             queryClient.invalidateQueries({ queryKey: ['schedules'] });
             toastMessage({ message: "Status atualizado com sucesso!", type: "success" });
             setLoadingId(null);
