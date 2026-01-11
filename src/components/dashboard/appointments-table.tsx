@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useMutationHook } from "@/hooks/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { DataTable, ColumnDef } from "@/components/ui/data-table";
-import { sendSchedulingConfirmation } from "@/utils/send-email";
+import { sendSchedulingCancellation, sendSchedulingConfirmation } from "@/utils/send-email";
 
 interface AppointmentsTableProps {
     data: AppointmentItem[];
@@ -17,7 +17,7 @@ interface AppointmentsTableProps {
     totalPages?: number;
     onPageChange?: (page: number) => void;
 }
-interface ScheduleResponse { userEmail: string, userName: string, dateString: string, time: string }
+interface ScheduleResponse { userEmail: string, userName: string, dateString: string, time: string, status: string }
 export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPageChange = () => { } }: AppointmentsTableProps) {
     const { data: session } = useSession();
     const queryClient = useQueryClient();
@@ -32,10 +32,17 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
             Authorization: `Bearer ${session?.user?.token}`
         },
         onSuccess: async (data) => {
-            const { userEmail, userName, dateString, time } = data
-            try {
-                await sendSchedulingConfirmation(userEmail, userName, dateString, time)
-            } catch { }
+            const { userEmail, userName, dateString, time, status } = data
+            if (status === 'CONFIRMED') {
+                try {
+                    await sendSchedulingConfirmation(userEmail, userName, dateString, time)
+                } catch { }
+            }
+            else if (status === 'CANCELLED') {
+                try {
+                    await sendSchedulingCancellation(userEmail, userName, dateString, time)
+                } catch { }
+            }
             queryClient.invalidateQueries({ queryKey: ['schedules'] });
             toastMessage({ message: "Status atualizado com sucesso!", type: "success" });
             setLoadingId(null);

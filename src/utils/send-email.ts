@@ -41,6 +41,31 @@ export async function sendSchedulingConfirmation(userEmail: string, userName: st
         }
     }
 
+    export async function sendSchedulingCancellation(userEmail: string, userName: string, dateString: string, time: string) {
+        try {
+            const parsedDate = parseISO(dateString);
+            const formattedDate = format(parsedDate, 'dd/MM/yyyy');
+
+            const info = await transporter.sendMail({
+                from: `"Scheduling App" <${process.env.MAIL_USER ?? ''}>`,
+                to: userEmail,
+                subject: '❌ Cancelamento de Agendamento',
+                html: `
+                    <div style="font-family: sans-serif; color: #333;">
+                        <h1>Olá, ${userName}!</h1>
+                        <p>Seu agendamento foi cancelado por um adimnistrador.</p>
+                        <p><strong>Data:</strong> ${formattedDate}</p>
+                        <p><strong>Horário:</strong> ${time}</p>
+                    </div>
+                `,
+            });
+            return info;
+        } catch (error) {
+            console.error("Erro ao enviar email:", error);
+            return null;
+        }
+    }
+
 export async function notifyAdminNewSchedule(adminEmail: string, userName: string, userEmail: string, dateString: string, time: string) {
         try {
             const parsedDate = parseISO(dateString);
