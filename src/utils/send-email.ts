@@ -1,3 +1,4 @@
+'use server'
 import nodemailer from 'nodemailer';
 import { format, parseISO } from 'date-fns';
 
@@ -13,7 +14,7 @@ const transporter= nodemailer.createTransport({
                 rejectUnauthorized: false
             }
         });
-        
+
 export async function sendSchedulingConfirmation(userEmail: string, userName: string, dateString: string, time: string) {
         try {
             const parsedDate = parseISO(dateString);
