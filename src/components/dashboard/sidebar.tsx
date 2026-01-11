@@ -91,10 +91,19 @@ export function Sidebar() {
     const displayRole = (profile.role || session?.user?.role) === 'ADMIN' ? 'Admin' : 'Cliente';
 
     const handleSignOut = async () => {
-        await signOut({
-            callbackUrl: '/signin',
-            redirect: true
-        });
+        try {
+            if (user?.token) {
+                await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sessions/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${user.token}`
+                    }
+                });
+            }
+        } catch {
+        } finally {
+            await signOut({ callbackUrl: isAdmin ? '/signin/admin' : '/signin', redirect: true });
+        }
     };
 
     return (
