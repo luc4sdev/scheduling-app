@@ -59,6 +59,8 @@ pnpm i
 
 ```
 NEXT_PUBLIC_API_BASE_URL="http://localhost:3333/api"
+MAIL_USER="example@email.com"
+MAIL_PASS="password"
 ```
 
 2. Para iniciar o projeto, utilize:
