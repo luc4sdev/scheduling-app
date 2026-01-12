@@ -111,6 +111,17 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
         mutation.mutate(data);
     };
 
+    const isTimeInPast = (time: string) => {
+        if (selectedDate !== getToday()) return false;
+
+        const now = new Date();
+        const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const [hours, minutes] = time.split(':').map(Number);
+        const slotTotalMinutes = hours * 60 + minutes;
+        return slotTotalMinutes <= currentTotalMinutes;
+    };
+
     return (
         <Modal
             isOpen={isOpen}
@@ -179,16 +190,20 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
                         <div className="grid grid-cols-4 gap-2 max-h-50 overflow-y-auto pr-1">
                             {availableSlots.map((time: string) => {
                                 const isSelected = watch("startTime") === time;
+                                const isDisabled = isTimeInPast(time);
                                 return (
                                     <button
                                         key={time}
                                         type="button"
+                                        disabled={isDisabled}
                                         onClick={() => setValue("startTime", time, { shouldValidate: true })}
                                         className={cn(
                                             "h-9 text-sm rounded-md border transition-all font-medium cursor-pointer",
-                                            isSelected
-                                                ? "bg-black text-white border-black"
-                                                : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50"
+                                            isDisabled
+                                                ? "bg-zinc-100 text-zinc-300 border-zinc-100 cursor-not-allowed decoration-zinc-300"
+                                                : isSelected
+                                                    ? "bg-black text-white border-black"
+                                                    : "bg-white text-zinc-700 border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50"
                                         )}
                                     >
                                         {time}

@@ -17,11 +17,11 @@ O Scheduling App é uma aplicação web para gerenciamento de agendamentos, com 
 
 <h2>OBS: email: admin@email.com / senha: admin123</h2>
 
-<a href="https://support-app-neon.vercel.app" target="_blank" rel="external">
+<a href="https://scheduling-app-sigma.vercel.app" target="_blank" rel="external">
 <img src="public/scheduling-app.png" height="350" width="750" alt="Imagem do Projeto">
 </a>
 
-<h2>Link: <a href="https://support-app-neon.vercel.app" target="_blank" rel="external">Projeto</a></h2>
+<h2>Link: <a href="https://scheduling-app-sigma.vercel.app" target="_blank" rel="external">Projeto</a></h2>
 
 <br/>
 <br/>
@@ -59,6 +59,7 @@ pnpm i
 
 ```
 NEXT_PUBLIC_API_BASE_URL="http://localhost:3333/api"
+AUTH_SECRET="secret"
 MAIL_USER="example@email.com"
 MAIL_PASS="password"
 ```
@@ -110,9 +111,7 @@ O projeto foi desenvolvido com as seguintes tecnologias e bibliotecas:
 
 ## 📄 Observações
 
-- O projeto segue boas práticas de Clean Code e arquitetura modular.
+- O projeto segue boas práticas de Clean Code.
 - O layout é totalmente responsivo e focado em usabilidade.
-- Para dúvidas ou sugestões, fique à vontade para abrir uma issue.
-
 ---
 
