@@ -45,6 +45,7 @@ export default function SigninAdmin() {
                 if (user?.role !== 'ADMIN') {
                     await signOut({ redirect: false });
                     toastMessage({ message: "Acesso negado: Esta área é exclusiva para administradores.", type: "error" });
+                    setIsLoading(false);
                     return;
                 }
                 if (user) {
