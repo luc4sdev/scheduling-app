@@ -15,7 +15,8 @@ O Scheduling App é uma aplicação web para gerenciamento de agendamentos, com 
 
 ## 🚀 Link do deploy do projeto (clique para entrar)
 
-<h2>OBS: email: admin@email.com / senha: admin123</h2>
+<h2>OBS: O servidor pode demorar um pouco pra responder na primeira requisição, pois ele fica offline caso não esteja sendo utilizado. Em alguns segundos as requisições funcionarão normalmente.</h2>
+<h2>Login Administrador: email: admin@email.com / senha: admin123</h2>
 <h2><a href="https://scheduling-app-sigma.vercel.app/signin/admin" target="_blank" rel="external">Login Admin</a></h2>
 <h2><a href="https://scheduling-app-sigma.vercel.app/signin" target="_blank" rel="external">Login Cliente</a></h2>
 <a href="https://scheduling-app-sigma.vercel.app" target="_blank" rel="external">
