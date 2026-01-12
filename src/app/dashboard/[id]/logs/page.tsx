@@ -86,8 +86,8 @@ export default function Logs() {
                     ) : logs.length > 0 ? (
                         <LogsTable logs={logs} onSort={toggleSort} isAdmin={isAdmin} page={page} totalPages={totalPages} onPageChange={setPage} />
                     ) : (
-                        <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
-                            Nenhum registro encontrado.
+                        <div className="p-6">
+                            <Skeleton />
                         </div>
                     )}
                 </div>

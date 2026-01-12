@@ -142,8 +142,8 @@ export default function UsersPage() {
                             onPageChange={setPage}
                         />
                     ) : (
-                        <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm p-6">
-                            Nenhum cliente encontrado.
+                        <div className="p-6">
+                            <Skeleton />
                         </div>
                     )}
                 </div>

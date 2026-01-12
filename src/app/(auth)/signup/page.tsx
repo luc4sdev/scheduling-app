@@ -1,104 +1,18 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from 'zod';
-import * as LabelPrimitive from '@radix-ui/react-label';
-import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
-import { cn } from "@/utils/utils";
-import { Button } from "@/components/ui/button";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { getSession, signIn } from "next-auth/react";
-import { fetchCep } from "@/utils/fetch-cep";
-
-const signUpSchema = z.object({
-    name: z.string().min(2, "Mínimo 2 letras"),
-    lastName: z.string().min(2, "Mínimo 2 letras"),
-    email: z.email("Email inválido"),
-    password: z.string().min(6, "Mínimo 6 caracteres"),
-    cep: z.string().min(8, "CEP inválido").max(9),
-    street: z.string().min(1, "Rua obrigatória"),
-    number: z.string().min(1, "Número obrigatório"),
-    complement: z.string().optional(),
-    neighborhood: z.string().min(1, "Bairro obrigatório"),
-    city: z.string().min(1, "Cidade obrigatória"),
-    state: z.string().min(2, "Estado obrigatório"),
-});
-
-type SignUpSchemaType = z.infer<typeof signUpSchema>
+import { UserForm, UserFormValues } from "@/components/ui/user-form";
 
 export default function Signup() {
-    const {
-        register,
-        handleSubmit,
-        watch,
-        setValue,
-        formState: { errors, isValid }
-    } = useForm<SignUpSchemaType>({
-        resolver: zodResolver(signUpSchema),
-        mode: "onChange"
-    });
-
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const [addressVisible, setAddressVisible] = useState(false);
-    const [isManualAddress, setIsManualAddress] = useState(false);
-    const [isLoadingCep, setIsLoadingCep] = useState(false);
-
-    const cepValue = watch("cep");
-
-    const enableManualEntry = () => {
-        setAddressVisible(true);
-        setIsManualAddress(true);
-    };
-
-    useEffect(() => {
-        const fetchAddress = async () => {
-            const cleanCep = cepValue?.replace(/\D/g, '');
-
-            if (cleanCep?.length === 8) {
-                setIsLoadingCep(true);
-                try {
-                    // Tenta buscar na API
-                    const data = await fetchCep(cleanCep);
-
-                    if (!data.erro) {
-                        setValue("street", data.logradouro);
-                        setValue("neighborhood", data.bairro);
-                        setValue("city", data.localidade);
-                        setValue("state", data.uf);
-
-                        setAddressVisible(true);
-                        setIsManualAddress(false);
-                        document.getElementById("number")?.focus();
-                    } else {
-                        toastMessage({ message: "CEP não encontrado. Preencha o endereço manualmente.", type: "info" });
-                        enableManualEntry();
-                        document.getElementById("street")?.focus();
-                    }
-                } catch {
-                    toastMessage({ message: "Erro ao buscar CEP. Preencha manualmente.", type: "error" });
-                    enableManualEntry();
-                } finally {
-                    setIsLoadingCep(false);
-                }
-            }
-        };
-
-        const timeoutId = setTimeout(() => {
-            if (cepValue) fetchAddress();
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [cepValue, setValue]);
-
-    async function handleSignUp(data: SignUpSchemaType) {
-        setIsLoading(true);
+    async function handleSignUp(data: UserFormValues) {
+        setIsSubmitting(true);
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, {
                 method: 'POST',
@@ -108,241 +22,52 @@ export default function Signup() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                toastMessage({
-                    message: errorData.message || 'Erro ao criar conta', type: 'error'
-                })
                 throw new Error(errorData.message || 'Erro ao criar conta');
             }
+
             const signInResult = await signIn("credentials", {
                 redirect: false,
                 email: data.email,
                 password: data.password,
             });
+
             if (signInResult?.ok) {
                 const session = await getSession();
                 const user = session?.user;
+
+                toastMessage({ message: "Conta criada com sucesso!", type: "success" });
+
                 if (user) {
                     router.push(`/dashboard/${user.id}`);
+                } else {
+                    router.push(`/dashboard`);
                 }
             } else {
-                console.error("Erro ao fazer login");
+                toastMessage({ message: "Conta criada. Faça login para continuar.", type: "success" });
+                router.push("/signin");
             }
-        } catch (error) {
-            console.error('Erro ao cadastrar:', error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Erro ao cadastrar. Tente novamente.";
+            toastMessage({ message: errorMessage, type: "error" });
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     }
 
     return (
         <div className="min-h-screen w-full flex flex-col bg-[#F5F4F2]">
-
             <AuthHeader router={router} />
-
             <main className="flex-1 flex items-center justify-center p-6 mb-10">
                 <div className="w-full max-w-125 flex flex-col items-center">
-
                     <h1 className="text-2xl font-semibold text-zinc-900 mb-8 tracking-tight text-center">
                         Cadastre-se
                     </h1>
-
                     <div className="w-full bg-white rounded-lg shadow-sm p-8 border border-gray-100">
-                        <form onSubmit={handleSubmit(handleSignUp)} className="flex flex-col gap-4">
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-2">
-                                    <LabelPrimitive.Root htmlFor="name" className="text-sm font-bold text-zinc-700">
-                                        Nome <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
-                                    </LabelPrimitive.Root>
-                                    <input
-                                        id="name"
-                                        placeholder="Mateus"
-                                        className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                        {...register("name")}
-                                    />
-                                    {errors.name && <span className="text-xs text-red-500">{errors.name.message}</span>}
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    <LabelPrimitive.Root htmlFor="lastName" className="text-sm font-bold text-zinc-700">
-                                        Sobrenome <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
-                                    </LabelPrimitive.Root>
-                                    <input
-                                        id="lastName"
-                                        placeholder="Barbosa"
-                                        className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                        {...register("lastName")}
-                                    />
-                                    {errors.lastName && <span className="text-xs text-red-500">{errors.lastName.message}</span>}
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <LabelPrimitive.Root htmlFor="email" className="text-sm font-bold text-zinc-700">
-                                    E-mail <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
-                                </LabelPrimitive.Root>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    placeholder="mateus@goldspell.com.br"
-                                    className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                    {...register("email")}
-                                />
-                                {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
-                            </div>
-
-                            <div className="flex flex-col gap-2">
-                                <LabelPrimitive.Root htmlFor="password" className="text-sm font-bold text-zinc-700">
-                                    Senha de acesso <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
-                                </LabelPrimitive.Root>
-                                <div className="relative">
-                                    <input
-                                        id="password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="***************"
-                                        className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none pr-10"
-                                        {...register("password")}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-800"
-                                    >
-                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                    </button>
-                                </div>
-                                {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
-                            </div>
-
-                            <div className="flex flex-col gap-2 relative">
-                                <div className="flex justify-between items-center">
-                                    <LabelPrimitive.Root htmlFor="cep" className="text-sm font-bold text-zinc-700">
-                                        CEP <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
-                                    </LabelPrimitive.Root>
-
-                                    <button
-                                        type="button"
-                                        onClick={enableManualEntry}
-                                        className="text-xs text-zinc-500 hover:text-zinc-900 underline cursor-pointer"
-                                    >
-                                        Preencher manualmente
-                                    </button>
-                                </div>
-
-                                <div className="relative">
-                                    <input
-                                        id="cep"
-                                        placeholder="00000-000"
-                                        maxLength={9}
-                                        className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                        {...register("cep")}
-                                    />
-                                    {isLoadingCep && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                            <LoaderCircle className="w-4 h-4 animate-spin text-zinc-500" />
-                                        </div>
-                                    )}
-                                </div>
-                                {errors.cep && <span className="text-xs text-red-500">{errors.cep.message}</span>}
-                            </div>
-
-                            <div className={cn(
-                                "grid gap-4 transition-all duration-500 ease-in-out",
-                                addressVisible ? "grid-rows-[1fr] opacity-100 mt-2" : "grid-rows-[0fr] opacity-0 mt-0 overflow-hidden"
-                            )}>
-                                <div className="min-h-0 flex flex-col gap-4">
-
-                                    <div className="flex flex-col gap-2">
-                                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Endereço</LabelPrimitive.Root>
-                                        <input
-                                            readOnly={!isManualAddress}
-                                            id="street"
-                                            className={cn(
-                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
-                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
-                                            )}
-                                            {...register("street")}
-                                        />
-                                        {errors.street && <span className="text-xs text-red-500">{errors.street.message}</span>}
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <LabelPrimitive.Root htmlFor="number" className="text-sm font-bold text-zinc-700">Número</LabelPrimitive.Root>
-                                        <input
-                                            id="number"
-                                            placeholder="43"
-                                            className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                            {...register("number")}
-                                        />
-                                        {errors.number && <span className="text-xs text-red-500">{errors.number.message}</span>}
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <LabelPrimitive.Root htmlFor="complement" className="text-sm font-bold text-zinc-700">Complemento</LabelPrimitive.Root>
-                                        <input
-                                            id="complement"
-                                            placeholder="Sala 1302"
-                                            className="flex h-11 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-zinc-950 outline-none"
-                                            {...register("complement")}
-                                        />
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Bairro</LabelPrimitive.Root>
-                                        <input
-                                            readOnly={!isManualAddress}
-                                            className={cn(
-                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
-                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
-                                            )}
-                                            {...register("neighborhood")}
-                                        />
-                                        {errors.neighborhood && <span className="text-xs text-red-500">{errors.neighborhood.message}</span>}
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Cidade</LabelPrimitive.Root>
-                                        <input
-                                            readOnly={!isManualAddress}
-                                            className={cn(
-                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
-                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
-                                            )}
-                                            {...register("city")}
-                                        />
-                                        {errors.city && <span className="text-xs text-red-500">{errors.city.message}</span>}
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Estado</LabelPrimitive.Root>
-                                        <input
-                                            readOnly={!isManualAddress}
-                                            className={cn(
-                                                "flex h-11 w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none transition-colors",
-                                                !isManualAddress ? "bg-zinc-100 text-zinc-600 cursor-not-allowed" : "bg-white focus-visible:ring-2 focus-visible:ring-zinc-950"
-                                            )}
-                                            {...register("state")}
-                                        />
-                                        {errors.state && <span className="text-xs text-red-500">{errors.state.message}</span>}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                disabled={isLoading || !isValid}
-                                className={cn(
-                                    "mt-4 w-full transition-all duration-300",
-                                    !isValid ? "bg-zinc-300 text-zinc-900 cursor-not-allowed hover:bg-zinc-300" : "bg-black text-white hover:bg-zinc-800"
-                                )}
-                            >
-                                {isLoading ? (
-                                    <LoaderCircle className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    "Cadastrar-se"
-                                )}
-                            </Button>
-
-                        </form>
+                        <UserForm
+                            variant="create"
+                            onSubmit={handleSignUp}
+                            isSubmitting={isSubmitting}
+                        />
                     </div>
                 </div>
             </main>
