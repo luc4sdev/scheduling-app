@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { signIn, getSession } from "next-auth/react";
+import { signIn, getSession, signOut } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
-import { signOut } from "@/lib/auth";
+
 
 const signInSchema = z.object({
     email: z.email("Insira um email válido"),
