@@ -242,7 +242,9 @@ export function UserForm({ defaultValues, onSubmit, isSubmitting, variant }: Use
                 <div className="min-h-0 flex flex-col gap-4">
 
                     <div className="flex flex-col gap-2">
-                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Endereço</LabelPrimitive.Root>
+                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">
+                            Endereço <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                        </LabelPrimitive.Root>
                         <input
                             readOnly={!isManualAddress}
                             id="street"
@@ -256,7 +258,9 @@ export function UserForm({ defaultValues, onSubmit, isSubmitting, variant }: Use
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <LabelPrimitive.Root htmlFor="number" className="text-sm font-bold text-zinc-700">Número</LabelPrimitive.Root>
+                        <LabelPrimitive.Root htmlFor="number" className="text-sm font-bold text-zinc-700">
+                            Número <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                        </LabelPrimitive.Root>
                         <input
                             id="number"
                             placeholder="43"
@@ -267,7 +271,9 @@ export function UserForm({ defaultValues, onSubmit, isSubmitting, variant }: Use
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <LabelPrimitive.Root htmlFor="complement" className="text-sm font-bold text-zinc-700">Complemento</LabelPrimitive.Root>
+                        <LabelPrimitive.Root htmlFor="complement" className="text-sm font-bold text-zinc-700">
+                            Complemento <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                        </LabelPrimitive.Root>
                         <input
                             id="complement"
                             placeholder="Sala 1302"
@@ -277,7 +283,9 @@ export function UserForm({ defaultValues, onSubmit, isSubmitting, variant }: Use
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Bairro</LabelPrimitive.Root>
+                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">
+                            Bairro <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                        </LabelPrimitive.Root>
                         <input
                             readOnly={!isManualAddress}
                             className={cn(
@@ -290,7 +298,9 @@ export function UserForm({ defaultValues, onSubmit, isSubmitting, variant }: Use
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Cidade</LabelPrimitive.Root>
+                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">
+                            Cidade <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                        </LabelPrimitive.Root>
                         <input
                             readOnly={!isManualAddress}
                             className={cn(
@@ -303,7 +313,9 @@ export function UserForm({ defaultValues, onSubmit, isSubmitting, variant }: Use
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">Estado</LabelPrimitive.Root>
+                        <LabelPrimitive.Root className="text-sm font-bold text-zinc-700">
+                            Estado <span className="font-normal text-zinc-500 text-xs">(Obrigatório)</span>
+                        </LabelPrimitive.Root>
                         <input
                             readOnly={!isManualAddress}
                             className={cn(
