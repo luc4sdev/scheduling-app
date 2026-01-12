@@ -12,6 +12,7 @@ import { LoaderCircle, Eye, EyeOff } from "lucide-react";
 import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utils";
 import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/auth";
 
 const signInSchema = z.object({
     email: z.email("Insira um email válido"),
@@ -41,6 +42,11 @@ export default function SigninAdmin() {
             if (res?.ok && !res?.error) {
                 const session = await getSession();
                 const user = session?.user;
+                if (user?.role !== 'ADMIN') {
+                    await signOut({ redirect: false });
+                    toastMessage({ message: "Acesso negado: Esta área é exclusiva para administradores.", type: "error" });
+                    return;
+                }
                 if (user) {
                     router.push(`/dashboard/${user.id}`);
                 }
