@@ -9,6 +9,7 @@ import { useMutationHook } from "@/hooks/useMutation";
 import { useQueryClient } from "@tanstack/react-query";
 import { DataTable, ColumnDef } from "@/components/ui/data-table";
 import { sendSchedulingCancellation, sendSchedulingConfirmation } from "@/utils/send-email";
+import { CancellationModal } from "./cancellation-modal";
 
 interface AppointmentsTableProps {
     data: AppointmentItem[];
@@ -17,13 +18,17 @@ interface AppointmentsTableProps {
     totalPages?: number;
     onPageChange?: (page: number) => void;
 }
-interface ScheduleResponse { userEmail: string, userName: string, dateString: string, time: string, status: string }
+
+interface ScheduleResponse { userEmail: string, userName: string, dateString: string, time: string, status: string, isAdmin: boolean }
+
 export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPageChange = () => { } }: AppointmentsTableProps) {
     const { data: session } = useSession();
     const queryClient = useQueryClient();
     const isAdmin = session?.user?.role === 'ADMIN';
 
     const [loadingId, setLoadingId] = useState<string | null>(null);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [appointmentToCancel, setAppointmentToCancel] = useState<AppointmentItem | null>(null);
 
     const mutation = useMutationHook<ScheduleResponse, Error, { id: string, status: string }>({
         url: ({ id }) => `/schedules/${id}/status`,
@@ -32,7 +37,7 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
             Authorization: `Bearer ${session?.user?.token}`
         },
         onSuccess: async (data) => {
-            const { userEmail, userName, dateString, time, status } = data
+            const { userEmail, userName, dateString, time, status, isAdmin } = data
             if (status === 'CONFIRMED') {
                 try {
                     await sendSchedulingConfirmation(userEmail, userName, dateString, time)
@@ -40,12 +45,14 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
             }
             else if (status === 'CANCELLED') {
                 try {
-                    await sendSchedulingCancellation(userEmail, userName, dateString, time)
+                    await sendSchedulingCancellation(userEmail, userName, dateString, time, isAdmin)
                 } catch { }
             }
             queryClient.invalidateQueries({ queryKey: ['schedules'] });
             toastMessage({ message: "Status atualizado com sucesso!", type: "success" });
             setLoadingId(null);
+            setIsCancelModalOpen(false);
+            setAppointmentToCancel(null);
         },
         onError: (error) => {
             toastMessage({ message: error.message || "Erro ao atualizar", type: "error" });
@@ -53,12 +60,23 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
         }
     });
 
-    const handleUpdateStatus = (id: string, newStatus: 'CONFIRMED' | 'CANCELLED') => {
+    function handleUpdateStatus(id: string, newStatus: 'CONFIRMED' | 'CANCELLED') {
         setLoadingId(id);
         mutation.mutate({ id, status: newStatus });
     };
 
-    const getStatusBadge = (status: string) => {
+    function openCancelModal(item: AppointmentItem) {
+        setAppointmentToCancel(item);
+        setIsCancelModalOpen(true);
+    }
+
+    function confirmCancellation() {
+        if (appointmentToCancel) {
+            handleUpdateStatus(appointmentToCancel.id, 'CANCELLED');
+        }
+    }
+
+    function getStatusBadge(status: string) {
         switch (status) {
             case "CONFIRMED":
                 return (
@@ -81,7 +99,20 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
         }
     };
 
-    const getRowColor = (status: string) => {
+    function getStatusTranslate(status: string) {
+        switch (status) {
+            case 'PENDING':
+                return 'Pendente'
+            case 'CONFIRMED':
+                return 'Confirmado'
+            case 'CANCELLED':
+                return 'Cancelado'
+            default:
+                return 'Inválido'
+        }
+    }
+
+    function getRowColor(status: string) {
         switch (status) {
             case "CONFIRMED": return "bg-teal-50"
             case "CANCELLED": return "bg-red-50";
@@ -92,6 +123,8 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
     const columns: ColumnDef<AppointmentItem>[] = [
         {
             header: "Data agendamento",
+            accessorKey: 'date',
+            exportValue: (item) => `${item.date} às ${item.startTime}h`,
             onSort: onSort,
             cell: (item) => (
                 <div className="flex flex-col">
@@ -106,6 +139,7 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
         },
         {
             header: "Nome",
+            accessorKey: 'clientName',
             cell: (item) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-zinc-900">{item.clientName}</span>
@@ -115,6 +149,7 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
         },
         {
             header: "Sala",
+            accessorKey: 'room',
             className: "text-center",
             cell: (item) => (
                 <span className="inline-flex items-center px-3 py-2 rounded-full text-xs font-bold bg-zinc-900 text-white">
@@ -124,6 +159,8 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
         },
         {
             header: "Status",
+            accessorKey: 'status',
+            exportValue: (item) => getStatusTranslate(item.status),
             className: "text-center",
             cell: (item) => getStatusBadge(item.status)
         },
@@ -148,7 +185,7 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
 
                             {item.status !== 'CANCELLED' && (
                                 <button
-                                    onClick={() => handleUpdateStatus(item.id, 'CANCELLED')}
+                                    onClick={() => openCancelModal(item)}
                                     className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white hover:bg-red-600 transition-colors cursor-pointer"
                                     title="Cancelar Agendamento"
                                 >
@@ -162,14 +199,26 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
         }
     ];
 
-    return <DataTable
-        data={data}
-        columns={columns}
-        getRowClassName={(item) => getRowColor(item.status)}
-        pagination={{
-            currentPage: page,
-            totalPages: totalPages,
-            onPageChange: onPageChange
-        }}
-    />;
+    return (
+        <>
+            <DataTable
+                data={data}
+                columns={columns}
+                getRowClassName={(item) => getRowColor(item.status)}
+                pagination={{
+                    currentPage: page,
+                    totalPages: totalPages,
+                    onPageChange: onPageChange
+                }}
+            />
+            <CancellationModal
+                appointmentToCancel={appointmentToCancel}
+                isCancelModalOpen={isCancelModalOpen}
+                confirmCancellation={confirmCancellation}
+                setIsCancelModalOpen={setIsCancelModalOpen}
+                isAdmin={isAdmin}
+                loadingId={loadingId}
+            />
+        </>
+    );
 }

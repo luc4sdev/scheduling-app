@@ -48,6 +48,23 @@ export default function Signin() {
                 password: data.password,
             });
 
+            switch (res?.code) {
+                case "rate_limit":
+                    toastMessage({
+                        message: "Muitas tentativas. Aguarde 5 minutos para tentar novamente.",
+                        type: "error"
+                    });
+                    break;
+
+                case "inactive_account":
+                    // ...
+                    break;
+
+                case "invalid_credentials":
+                    // ...
+                    break;
+            }
+
             if (res?.ok && !res?.error) {
                 const session = await getSession();
                 const user = session?.user;
@@ -55,16 +72,22 @@ export default function Signin() {
                     router.push(`/dashboard/${user.id}`);
                 }
             } else {
-                if (res?.error === "Configuration" || res?.error?.includes("Configuration")) {
-                    toastMessage({
-                        message: "Sua conta foi desativada. Entre em contato com o suporte.",
-                        type: "error"
-                    });
-                } else {
-                    toastMessage({
-                        message: "Email ou senha inválidos",
-                        type: "error"
-                    });
+                switch (res.code) {
+                    case "rate_limit":
+                        toastMessage({
+                            message: "Muitas tentativas. Aguarde 1 minuto para tentar novamente.",
+                            type: "error"
+                        });
+                        break;
+
+                    case "inactive":
+                        toastMessage({
+                            message: "Sua conta foi desativada. Entre em contato com o suporte.",
+                            type: "error"
+                        });
+                        break;
+                    default:
+                        toastMessage({ message: "Email ou senha inválidos", type: "error" });
                 }
             }
         } catch {

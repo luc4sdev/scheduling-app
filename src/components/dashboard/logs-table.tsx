@@ -16,6 +16,7 @@ export function LogsTable({ logs, onSort, isAdmin, page = 1, totalPages = 1, onP
     const columns: ColumnDef<LogItem>[] = [
         ...(isAdmin ? [{
             header: "Cliente",
+            accessorKey: "clientName" as keyof LogItem,
             className: "w-[30%]",
             cell: (log: LogItem) => (
                 <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
@@ -25,6 +26,7 @@ export function LogsTable({ logs, onSort, isAdmin, page = 1, totalPages = 1, onP
         }] : []),
         {
             header: "Tipo de atividade",
+            accessorKey: 'activityType',
             className: "w-[20%]",
             cell: (log) => (
                 <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-700 border border-zinc-200">
@@ -34,11 +36,13 @@ export function LogsTable({ logs, onSort, isAdmin, page = 1, totalPages = 1, onP
         },
         {
             header: "Módulo",
+            accessorKey: 'module',
             className: "w-[20%]",
             cell: (log) => <ModuleBadge module={log.module} />
         },
         {
             header: "Data e horário",
+            accessorKey: 'date',
             className: "w-[20%] text-zinc-600 font-medium",
             onSort: onSort,
             cell: (log) => (

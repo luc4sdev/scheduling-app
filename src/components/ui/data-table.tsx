@@ -1,8 +1,11 @@
 'use client'
 
-import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react";
 import { cn } from "@/utils/utils";
 import { ReactNode } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Button } from "@/components/ui/button";
 
 export interface ColumnDef<T> {
     header: string | ReactNode;
@@ -10,12 +13,15 @@ export interface ColumnDef<T> {
     cell?: (item: T) => ReactNode;
     className?: string;
     onSort?: () => void;
+    excludeFromExport?: boolean;
+    exportValue?: (item: T) => string;
 }
 
 interface DataTableProps<T> {
     data: T[];
     columns: ColumnDef<T>[];
     isLoading?: boolean;
+    title?: string;
     pagination?: {
         currentPage: number;
         totalPages: number;
@@ -30,12 +36,62 @@ export function DataTable<T extends { id: string | number }>({
     columns,
     isLoading,
     pagination,
+    title = "Relatório",
     getRowClassName
 }: DataTableProps<T>) {
 
+    function handleExportPDF() {
+        const doc = new jsPDF();
+
+        const exportableColumns = columns.filter(col => !col.excludeFromExport && col.accessorKey);
+
+        const tableHead = exportableColumns.map(col => {
+            if (typeof col.header === 'string') return col.header;
+            return String(col.accessorKey || "Coluna").toUpperCase();
+        });
+
+        const tableBody = data.map(row => {
+            return exportableColumns.map(col => {
+                if (col.exportValue) {
+                    return String(col.exportValue(row));
+                }
+                const value = col.accessorKey ? row[col.accessorKey] : "";
+
+                if (value === null || value === undefined) return "";
+
+                return String(value);
+            });
+        });
+
+        doc.text(title, 14, 15);
+
+        autoTable(doc, {
+            head: [tableHead],
+            body: tableBody,
+            startY: 20,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [0, 0, 0] },
+        });
+
+        doc.save(`${title.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    };
+
     return (
         <>
-            <div className="w-full flex-1 overflow-x-auto">
+            <div className="ml-auto mr-6 my-2">
+                <Button
+                    onClick={handleExportPDF}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={isLoading || data.length === 0}
+                >
+                    <Download className="w-4 h-4" />
+                    Baixar PDF
+                </Button>
+            </div>
+
+            <div className="w-full flex-1 overflow-x-auto border border-zinc-200 rounded-md">
                 <table className="w-full text-sm text-left">
                     <thead className="text-xs text-zinc-700 bg-zinc-50/50 border-b border-zinc-200">
                         <tr>
@@ -81,10 +137,7 @@ export function DataTable<T extends { id: string | number }>({
                             data.map((item) => (
                                 <tr
                                     key={item.id}
-                                    className={cn(
-                                        "transition-colors",
-                                        getRowClassName ? getRowClassName(item) : "bg-white"
-                                    )}
+                                    className={cn(getRowClassName ? getRowClassName(item) : "bg-white")}
                                 >
                                     {columns.map((col, index) => (
                                         <td key={index} className={cn("px-6 py-4", col.className)}>

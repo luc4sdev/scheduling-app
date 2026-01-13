@@ -24,6 +24,7 @@ export function UsersTable({ data, onSort, onToggleStatus, onTogglePermission, p
         },
         {
             header: "Nome",
+            accessorKey: 'name',
             cell: (client) => (
                 <div className="flex flex-col">
                     <span className="font-medium text-zinc-900">{client.name}</span>
@@ -33,6 +34,7 @@ export function UsersTable({ data, onSort, onToggleStatus, onTogglePermission, p
         },
         {
             header: "Endereço",
+            accessorKey: 'address',
             className: "text-zinc-600 max-w-62.5 truncate",
             cell: (client) => <span title={client.address}>{client.address}</span>
         },

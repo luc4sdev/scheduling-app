@@ -1,6 +1,13 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
+
+class RateLimitError extends CredentialsSignin {
+  code = "rate_limit";
+}
+class UserInactiveError extends CredentialsSignin {
+  code = "inactive";
+}
 
 const signInSchema = z.object({
   email: z.email(),
@@ -30,7 +37,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         body: JSON.stringify({ email, password }),
                         headers: { "Content-Type": "application/json" }
                     });
-
+                    if (res.status === 429) {
+                    throw new RateLimitError();
+                }
                     if (!res.ok) return null;
 
                     const data = await res.json();
@@ -44,7 +53,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         const userData = await profileRes.json();
 
                         if (userData.isActive === false) {
-                            throw new Error("inactive");
+                            throw new UserInactiveError();
                         }
                         
                         return {
@@ -60,7 +69,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     return null;
                 } catch (error) {
-                    if (error instanceof Error && error.message === "inactive") {
+                    if (error instanceof CredentialsSignin) {
                         throw error;
                     }
                     console.error("Erro no authorize:", error);

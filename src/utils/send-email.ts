@@ -41,7 +41,8 @@ export async function sendSchedulingConfirmation(userEmail: string, userName: st
         }
     }
 
-    export async function sendSchedulingCancellation(userEmail: string, userName: string, dateString: string, time: string) {
+    export async function sendSchedulingCancellation(userEmail: string, userName: string, dateString: string, time: string, isAdmin: boolean) {
+        if(!isAdmin) return;
         try {
             const parsedDate = parseISO(dateString);
             const formattedDate = format(parsedDate, 'dd/MM/yyyy');

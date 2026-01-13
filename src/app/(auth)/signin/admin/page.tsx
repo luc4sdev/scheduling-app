@@ -52,7 +52,23 @@ export default function SigninAdmin() {
                     router.push(`/dashboard/${user.id}`);
                 }
             } else {
-                toastMessage({ message: "Email ou senha inválidos", type: "error" });
+                switch (res.code) {
+                    case "rate_limit":
+                        toastMessage({
+                            message: "Muitas tentativas. Aguarde 1 minuto para tentar novamente.",
+                            type: "error"
+                        });
+                        break;
+
+                    case "inactive":
+                        toastMessage({
+                            message: "Sua conta foi desativada. Entre em contato com o suporte.",
+                            type: "error"
+                        });
+                        break;
+                    default:
+                        toastMessage({ message: "Email ou senha inválidos", type: "error" });
+                }
             }
         } catch {
             toastMessage({ message: "Erro ao tentar fazer login", type: "error" });
