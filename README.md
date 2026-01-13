@@ -10,6 +10,7 @@ O Scheduling App é uma aplicação web para gerenciamento de agendamentos, com 
 - **Configuração de Salas:** Cadastro e edição de salas, horários de funcionamento e intervalos de agendamento.
 - **Interface Responsiva:** Layout adaptado para diferentes dispositivos, com experiência otimizada para desktop e mobile.
 - **Feedback Visual:** Notificações e mensagens de sucesso/erro para ações do usuário.
+- **Download das tabelas em PDF:** Permite baixar as informações da tabela em formato PDF.
 
 <br/>
 
