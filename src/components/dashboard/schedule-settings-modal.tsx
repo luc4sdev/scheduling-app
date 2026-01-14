@@ -7,7 +7,6 @@ import { z } from "zod";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Clock, Plus, ChevronDown, LoaderCircle, Trash2 } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utils";
 import { useMutationHook } from "@/hooks/useMutation";
@@ -38,8 +37,6 @@ interface ScheduleSettingsModalProps {
 }
 
 export function ScheduleSettingsModal({ isOpen, onClose }: ScheduleSettingsModalProps) {
-    const { data: session } = useSession();
-
     const {
         register,
         control,
@@ -76,9 +73,6 @@ export function ScheduleSettingsModal({ isOpen, onClose }: ScheduleSettingsModal
         url: '/rooms',
         method: 'POST',
         invalidateQueries: [['rooms']],
-        headers: {
-            Authorization: `Bearer ${session?.user?.token}`
-        },
         onSuccess: () => {
             toastMessage({ message: "Salas cadastradas com sucesso!", type: "success" });
             onClose();

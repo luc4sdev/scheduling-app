@@ -92,12 +92,10 @@ export function Sidebar() {
 
     const handleSignOut = async () => {
         try {
-            if (user?.token) {
+            if (user) {
                 await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sessions/logout`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${user.token}`
-                    }
+                    credentials: 'include',
                 });
             }
         } catch {

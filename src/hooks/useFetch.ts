@@ -20,14 +20,16 @@ const useFetch = ({
     const { data: session } = useSession();
     const queryKey = [...cacheKeys, url];
     const queryFn = async () => {
-        if (!session?.user.token) {
-            throw new Error('No session token available');
+        if (!session) {
+            throw new Error('User not authenticated');
         }
+
         const fullUrl = `${baseUrl}${url}`;
         const response = await fetch(fullUrl, {
             ...options,
+            credentials: 'include',
             headers: {
-                Authorization: `Bearer ${session.user.token}`,
+               ...options?.headers,
             },
         });
         if (!response.ok) {
