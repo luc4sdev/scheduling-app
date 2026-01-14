@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, LoaderCircle } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { toastMessage } from "@/utils/toast-message";
 import { cn } from "@/utils/utils";
 import useFetch from "@/hooks/useFetch";
@@ -33,6 +34,7 @@ interface UserAppointmentModalProps {
 }
 
 export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalProps) {
+    const { data: session } = useSession();
     const queryClient = useQueryClient();
 
     const getToday = () => {
@@ -92,6 +94,9 @@ export function UserAppointmentModal({ isOpen, onClose }: UserAppointmentModalPr
     const mutation = useMutationHook<void, Error, AppointmentSchemaType>({
         url: '/schedules',
         method: 'POST',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['schedules'] });
             toastMessage({ message: "Agendamento realizado com sucesso!", type: "success" });

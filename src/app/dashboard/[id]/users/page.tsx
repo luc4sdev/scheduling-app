@@ -52,6 +52,9 @@ export default function UsersPage() {
     const mutation = useMutationHook<void, Error, Partial<UserApiResponse>>({
         url: ({ id }) => `/users/${id}`,
         method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
             toastMessage({ message: "Dados atualizados com sucesso", type: "success" });

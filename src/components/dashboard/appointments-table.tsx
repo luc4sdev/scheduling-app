@@ -33,6 +33,9 @@ export function AppointmentsTable({ data, onSort, page = 1, totalPages = 1, onPa
     const mutation = useMutationHook<ScheduleResponse, Error, { id: string, status: string }>({
         url: ({ id }) => `/schedules/${id}/status`,
         method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
+        },
         onSuccess: async (data) => {
             const { userEmail, userName, dateString, time, status, isAdmin } = data
             if (status === 'CONFIRMED') {

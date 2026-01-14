@@ -38,6 +38,9 @@ export default function Profile() {
     const mutation = useMutationHook<void, Error, PayloadUser>({
         url: `/users/${session?.user?.id}`,
         method: 'PUT',
+        headers: {
+            Authorization: `Bearer ${session?.user?.token}`
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['profile'] });
             toastMessage({ message: "Perfil atualizado com sucesso!", type: "success" });

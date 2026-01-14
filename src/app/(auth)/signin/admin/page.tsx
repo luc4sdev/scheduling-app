@@ -43,10 +43,6 @@ export default function SigninAdmin() {
                 const session = await getSession();
                 const user = session?.user;
                 if (user?.role !== 'ADMIN') {
-                    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sessions/logout`, {
-                        method: 'POST',
-                        credentials: 'include',
-                    });
                     await signOut({ redirect: false });
                     toastMessage({ message: "Acesso negado: Esta área é exclusiva para administradores.", type: "error" });
                     setIsLoading(false);

@@ -4,7 +4,6 @@ import {
     UseMutationOptions,
     UseMutationResult,
 } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
 
 type UseMutationHookOptions<TData, TError, TVariables> = {
     url: string | ((variables: TVariables) => string);
@@ -27,13 +26,9 @@ export const useMutationHook = <
     ...options
 }: UseMutationHookOptions<TData, TError, TVariables>): UseMutationResult<TData, TError, TVariables> => {
     const queryClient = useQueryClient();
-    const { data: session } = useSession();
 
     return useMutation<TData, TError, TVariables>({
         mutationFn: async (variables: TVariables) => {
-              if (!session) {
-            throw new Error('User not authenticated');
-        }
             const urlPath = typeof url === 'function' ? url(variables) : url;
             const response = await fetch(`${baseUrl}${urlPath}`, {
                 method,
