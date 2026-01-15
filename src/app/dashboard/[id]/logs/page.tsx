@@ -60,7 +60,7 @@ export default function Logs() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                         <input
                             type="text"
-                            placeholder="Filtre por nome, tipo de atividade ou Módulo"
+                            placeholder="Filtre por tipo de atividade ou Módulo"
                             value={search}
                             onChange={handleSearch}
                             className="w-full h-11 pl-10 pr-4 rounded-md border border-zinc-200 bg-white text-sm outline-none focus:ring-2 focus:ring-zinc-950 placeholder:text-zinc-400 transition-all"
